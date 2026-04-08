@@ -177,3 +177,5 @@ outputs/
 *.urdf
 *.xml
 *.part
+third_party/chassis/build/
+
