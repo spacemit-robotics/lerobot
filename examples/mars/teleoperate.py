@@ -39,7 +39,7 @@ def main():
     # - --robot.port: 机器人侧 follower arm 串口
     # - --robot.base_dev_path: 机器人侧 base 串口
     # - SO101LeaderConfig(port=...): 操作端 leader arm 串口
-    robot_config = MarsClientConfig(remote_ip="10.0.91.173", id="my_mars")
+    robot_config = MarsClientConfig(remote_ip="10.0.90.55", id="my_mars")
     teleop_arm_config = SO101LeaderConfig(port="/dev/ttyACM0", id="my_mars_leader")
     keyboard_config = KeyboardTeleopConfig(id="my_keyboard")
 

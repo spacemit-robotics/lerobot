@@ -12,7 +12,9 @@ from functools import cached_property
 import cv2
 import numpy as np
 
+from lerobot.cameras.configs import Cv2Rotation
 from lerobot.processor import RobotAction, RobotObservation
+from lerobot.cameras.utils import get_cv2_rotation
 from lerobot.utils.constants import ACTION, OBS_STATE
 from lerobot.utils.decorators import check_if_already_connected, check_if_not_connected
 from lerobot.utils.errors import DeviceNotConnectedError
@@ -76,10 +78,15 @@ class MarsClient(Robot):
 
     @cached_property
     def _cameras_ft(self) -> dict[str, tuple[int, int, int]]:
-        return {
-            name: ((cfg.height or 480), (cfg.width or 640), 3)
-            for name, cfg in self.config.cameras.items()
-        }
+        camera_features: dict[str, tuple[int, int, int]] = {}
+        for name, cfg in self.config.cameras.items():
+            height = cfg.height or 480
+            width = cfg.width or 640
+            rotation = get_cv2_rotation(getattr(cfg, "rotation", Cv2Rotation.NO_ROTATION))
+            if rotation in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE]:
+                height, width = width, height
+            camera_features[name] = (height, width, 3)
+        return camera_features
 
     @property
     def observation_features(self) -> dict:

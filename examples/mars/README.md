@@ -104,12 +104,13 @@ python -m lerobot.robots.mars.mars_host \
   --robot.base_dev_path=/dev/ttyACM1 \
   --robot.base_baud=115200 \
   --robot.base_type=diff_2wd \
+  --robot.base_left_wheel_gain=1.08 \
   --host.port_zmq_cmd=5565 \
   --host.port_zmq_observations=5566 \
   --host.connection_time_s=3600 \
   --robot.cameras='{
-    "front": {"type":"opencv","index_or_path":"/dev/video2","width":640,"height":480,"fps":30},
-    "wrist": {"type":"opencv","index_or_path":"/dev/video0","width":480,"height":640,"fps":30,"rotation":"ROTATE_90"}
+    "front": {"type":"opencv","index_or_path":"/dev/video2","width":640,"height":480,"fps":30,"fourcc":"MJPG"},
+    "wrist": {"type":"opencv","index_or_path":"/dev/video0","width":640,"height":480,"fps":30,"fourcc":"MJPG"}
   }'
 ```
 
@@ -124,16 +125,7 @@ python -m lerobot.robots.mars.mars_host \
 - `--host.port_zmq_cmd`：host 接收 client action 的端口
 - `--host.port_zmq_observations`：host 对外发送 observation 的端口
 - `--host.connection_time_s`：host 运行时长上限；到时会自动退出
-- `--robot.cameras`：相机配置
-
-如果分辨率跑不上去，就让相机用motion-JPEG传输帧，很多UVC相机默认YUYV在640x480只能到25fps。
-
-```bash
---robot.cameras='{
-    "front": {"type":"opencv","index_or_path":"/dev/video2","width":640,"height":480,"fps":30,"fourcc":"MJPG"},
-    "wrist": {"type":"opencv","index_or_path":"/dev/video0","width":480,"height":640,"fps":30,"rotation":"ROTATE_90","fourcc":"MJPG"}
-  }'
-```
+- `--robot.cameras`：相机配置。建议在 UVC 相机上显式设置 `fourcc="MJPG"`，让相机直接输出 motion-JPEG。这样通常能显著降低 USB 带宽压力，并更容易稳定跑到 `640x480@30fps`；否则很多摄像头默认使用 `YUYV`，在同样分辨率下可能只能跑到 25fps 左右，导致 host 侧观测帧率不稳、录制掉帧或推理显示卡顿。
 
 如果选择使用 RPMSG 驱动，把 UART 相关参数替换为：
 
@@ -229,7 +221,20 @@ Mars 数采示例：
 录制完成后，脚本会：
 
 - `dataset.finalize()`
-- `dataset.push_to_hub()`
+- 当 `PUSH_TO_HUB=True` 且本次确实保存了 episode 时，才会执行 `dataset.push_to_hub()`
+
+当前 `examples/mars/record.py` 还支持续采：
+
+- `RESUME = True`：在已有数据集上继续录制
+- `RESUME = False`：创建一个全新的数据集
+
+如果你要续采已有数据集，脚本会先检查：
+
+- `robot_type`
+- `fps`
+- `features`
+
+只有这些元数据与现有数据集兼容时，才允许继续写入，避免把不一致的数据 schema 混到同一个数据集中。
 
 如果你希望走统一 CLI，也可以直接使用 `lerobot-record`，核心思路与 `examples/mars/record.py` 一致。
 
@@ -239,13 +244,15 @@ Mars 当前建议先直接复用 LeRobot 通用训练入口：
 
 ```bash
 lerobot-train \
-  --dataset.repo_id=<hf_username>/<mars_dataset_repo_id> \
   --policy.type=act \
-  --output_dir=outputs/train/act_mars \
-  --job_name=act_mars \
-  --policy.device=cuda \
-  --wandb.enable=true \
-  --policy.repo_id=<hf_username>/<mars_policy_repo_id>
+  --policy.repo_id=annyi/mars_act_pick_place \
+  --dataset.repo_id=annyi/mars-pick-place \
+  --dataset.root=datasets/mars-pick-place \
+  --output_dir=outputs/train/mars_act_pick_place \
+  --job_name=mars_act_pick_place \
+  --batch_size=4 \
+  --steps=100000 \
+  --policy.device=cuda
 ```
 
 说明：
@@ -273,7 +280,8 @@ Mars 推理与评测示例：
 1. 连接 `MarsClient`
 2. 从 Hub 加载策略
 3. 从**训练数据集**加载 `dataset_stats`
-4. 用 `record_loop(...)` 执行策略并记录评测 episode
+4. 执行策略并记录评测 episode
+5. reset 窗口只用于人工复位，不再写入评测数据集
 
 运行前需要修改这些常量：
 
