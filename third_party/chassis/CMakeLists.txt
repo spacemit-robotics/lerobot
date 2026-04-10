@@ -84,6 +84,13 @@ if(CHASSIS_BUILD_TESTS)
         RUNTIME DESTINATION bin
     )
 
+    add_executable(test_chassis_forward_backward test/test_chassis_forward_backward.c)
+    target_link_libraries(test_chassis_forward_backward chassis m)
+    set_target_properties(test_chassis_forward_backward PROPERTIES BUILD_RPATH "$ORIGIN")
+    install(TARGETS test_chassis_forward_backward
+        RUNTIME DESTINATION bin
+    )
+
     # Only build keyboard_control if it exists
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/keyboard_control.c")
         add_executable(keyboard_control test/keyboard_control.c)
