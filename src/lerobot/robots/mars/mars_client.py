@@ -47,8 +47,8 @@ class MarsClient(Robot):
         self.last_frames = {}
         self.last_remote_state = {}
         self.speed_levels = [
-            {"xy": 0.1, "theta": math.pi / 6},
             {"xy": 0.2, "theta": math.pi / 3},
+            {"xy": 0.25, "theta": math.pi / 3},
             {"xy": 0.3, "theta": math.pi / 2},
         ]
         self.speed_index = 0
