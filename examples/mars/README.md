@@ -14,16 +14,14 @@
 - 使用 `lerobot-train` 训练策略
 - 使用训练好的策略进行推理与评测
 
-Mars 当前按 **LeKiwi 风格 host/client 架构**工作：
+Mars 当前采用 **LeKiwi 风格的 host/client 架构**：
 
-- 开发板作为 host：`bianbu@10.0.91.173`
-- 操作机作为 client：运行 `MarsClient`
-- leader arm 控机械臂
-- keyboard 控底盘
+- 开发板作为 host：运行 `MarsHost`，负责连接并直接控制机械臂、底盘、相机等机器人侧硬件
+- 操作机作为 client：运行 `MarsClient`，负责遥操作输入、策略推理等上层控制逻辑
+- 机械臂由 leader arm 控制
+- 底盘由键盘控制
 
 ## 1. 架构说明
-
-当前路径是：
 
 - `MarsHost`
   - 运行在机器人侧
@@ -39,45 +37,35 @@ Mars 当前按 **LeKiwi 风格 host/client 架构**工作：
 
 ## 2. 前置条件
 
-### 机器人侧
+### Mars Client
 
 需要具备：
 
-- Mars arm 已接好，SO101 follower 臂可被 LeRobot 访问
-- Mars 底盘控制库已经编译完成，例如 `third_party/chassis/build/libchassis.so`
-- 底盘 UART 串口设备可访问（Mars 当前默认按 UART 方式驱动）
+- Mars 已接好机械臂和底盘，并且被赋予正确权限（666）
 - 相机设备节点正确，例如 `/dev/video0` `/dev/video2`
-- 机器人侧已安装当前版本 LeRobot 及所需依赖
+- Mars 底盘控制库已经编译完成，例如 `third_party/chassis/build/libchassis.so`
+- 已安装当前版本 LeRobot 及所需依赖
 
-### 操作端电脑侧
+### Mars Host
 
 需要具备：
 
-- 当前版本 LeRobot
+- 已安装当前版本 LeRobot 及所需依赖
 - ZeroMQ 相关依赖
-- leader arm 可访问
-- 键盘 teleop 可用
-- 能访问机器人 IP
+- 如需执行遥操作，确保主导臂已连接、键盘相关功能键正常
+- 能访问 Mars Client IP
 
-开始前还应确认：
+## 3. 遥操作
 
-- 本地代码已同步到开发板
-- 开发板能正常启动 `mars_host`
-- follower arm 串口和底盘串口已区分
-- 操作机侧 leader arm 串口可访问
-- 已安装 LeRobot 所需依赖和 Feetech 支持
+### Step A. 启动 host
 
-## 3. 最小启动步骤
-
-### Step A. 在机器人侧启动 host
-
-先在机器人侧进入仓库：
+进入仓库：
 
 ```bash
-cd /home/anny/workspaces/lerobot-0.5.0
+cd lerobot
 ```
 
-如果你使用当前仓库里已 vendored 的底盘源码，先构建一次共享库：
+构建底盘共享库：
 
 ```bash
 ./scripts/build_mars_chassis.sh
@@ -87,14 +75,7 @@ cd /home/anny/workspaces/lerobot-0.5.0
 
 - `third_party/chassis/build/libchassis.so`
 
-当前 `MarsBaseAdapter` 会优先自动查找：
-
-- `third_party/chassis/build/libchassis.so`
-- `third_party/chassis/build/libbase.so`
-
-因此在大多数情况下，**不再需要显式传 `--robot.base_control_library_path`**。
-
-然后按 UART 方式启动：
+启动 Host：
 
 ```bash
 python -m lerobot.robots.mars.mars_host \
@@ -138,33 +119,27 @@ python -m lerobot.robots.mars.mars_host \
 --robot.base_rpmsg_remote_addr=1002
 ```
 
-### Step B. 在操作端修改示例脚本参数
+### Step B. Host 端修改遥操脚本参数
 
-仓库里当前用于 host/client teleop 的最小示例：
+遥操脚本位于：
 
 - `examples/mars/teleoperate.py`
 
-需要至少改这几个参数：
-
-- `MarsClientConfig(remote_ip="192.168.1.10", ...)`
-- `SO101LeaderConfig(port="/dev/ttyACM1", ...)`
-
-把它们改成你自己的：
-
-- 机器人 IP
-- leader arm 串口
-- robot / leader id
-
-### Step C. 在操作端启动 teleop
+至少修改以下代码片段：
 
 ```bash
-cd /home/anny/workspaces/lerobot-0.5.0
+robot_config = MarsClientConfig(remote_ip="mars_host_remote_ip", id="my_mars")
+teleop_arm_config = SO101LeaderConfig(port="/dev/ttyACM0", id="my_mars_leader")
+```
+
+### Step C. Host 端启动 teleop
+
+```bash
+cd lerobot
 python examples/mars/teleoperate.py
 ```
 
-## 4. 控制方式
-
-当前最小联调脚本沿用 LeKiwi 风格：
+遥操路径为：
 
 - SO101 leader arm -> arm action
 - keyboard -> base action
@@ -181,72 +156,52 @@ base 默认键位来自 `MarsClientConfig.teleop_keys`：
 - `f`: speed_down
 - `q`: 退出 teleop 循环；脚本会在退出前先发送一次零底盘速度命令
 
-底盘 action 语义为：
+需要注意的是，对于两轮差速底盘，左右平移功能不支持。
 
-- `x.vel`
-- `y.vel`
-- `theta.vel`
+## 4. 数据集采集
 
-这与当前真实底盘版 `Mars` / `MarsHost` / `MarsClient` 已保持一致。
-
-但要注意：如果你的底盘类型是 `diff_2wd`，那么实际底盘并不是全向底盘。
-
-- `x.vel`：前后运动
-- `theta.vel`：原地旋转
-- `y.vel`：在当前语义层仍然保留，但在 `diff_2wd` 上不应理解为“真正的侧向平移”
-
-因此首次测试时，建议把 `a/d` 当成“当前 teleop 语义映射中的左右控制输入”，并**用真机实际运动结果确认方向与预期是否一致**，不要先验假设它一定等价于全向底盘的 lateral motion。
-
-## 5. 数采
-
-Mars 数采示例：
+数采脚本位于：
 
 - `examples/mars/record.py`
 
-该脚本复用 LeKiwi 思路：
+数采之前启动 Mars Host，并需要修改以下代码片段：
 
-- `teleop=[leader_arm, keyboard]`
-- `record_loop(...)`
-- 由 `robot.action_features` 和 `robot.observation_features` 自动生成数据集特征
+```bash
+REMOTE_IP = "mars_host_remote_ip"
+ROBOT_ID = "my_mars"
+LEADER_PORT = "/dev/ttyACM0"
+LEADER_ID = "my_mars_leader"
+KEYBOARD_ID = "my_keyboard"
 
-运行前至少修改这些常量：
-
-- `REMOTE_IP`
-- `ROBOT_ID`
-- `LEADER_PORT`
-- `LEADER_ID`
-- `HF_REPO_ID`
-- `TASK_DESCRIPTION`
+NUM_EPISODES = 30
+FPS = 30
+EPISODE_TIME_SEC = 600
+RESET_TIME_SEC = 30
+TASK_DESCRIPTION = "pick and place the cube on the orange box"
+HF_REPO_ID = "hf_username/mars-pick-place-move"
+PUSH_TO_HUB = False
+RESUME = False
+```
 
 录制完成后，脚本会：
 
 - `dataset.finalize()`
 - 当 `PUSH_TO_HUB=True` 且本次确实保存了 episode 时，才会执行 `dataset.push_to_hub()`
 
-当前 `examples/mars/record.py` 还支持续采：
+续采功能：
 
 - `RESUME = True`：在已有数据集上继续录制
 - `RESUME = False`：创建一个全新的数据集
 
-如果你要续采已有数据集，脚本会先检查：
+## 5. 训练
 
-- `robot_type`
-- `fps`
-- `features`
-
-只有这些元数据与现有数据集兼容时，才允许继续写入，避免把不一致的数据 schema 混到同一个数据集中。
-
-如果你希望走统一 CLI，也可以直接使用 `lerobot-record`，核心思路与 `examples/mars/record.py` 一致。
-
-## 6. 训练
-
-Mars 当前建议先直接复用 LeRobot 通用训练入口：
+直接复用 LeRobot 通用训练入口：
 
 ```bash
-lerobot-train \
+lerobot-train \ 
   --policy.type=act \
-  --policy.repo_id=annyi/mars_act_pick_place \
-  --dataset.repo_id=annyi/mars-pick-place \
+  --policy.repo_id=hf_username/mars_act_pick_place \
+  --dataset.repo_id=hf_username/mars-pick-place \
   --dataset.root=datasets/mars-pick-place \
   --output_dir=outputs/train/mars_act_pick_place \
   --job_name=mars_act_pick_place \
@@ -254,12 +209,6 @@ lerobot-train \
   --steps=100000 \
   --policy.device=cuda
 ```
-
-说明：
-
-- `ACT` 会根据数据集中的状态、动作、相机特征自动适配输入输出维度
-- 如果不用 wandb，可设 `--wandb.enable=false`
-- 如果不想训练完成后自动上传模型，可加 `--policy.push_to_hub=false`
 
 恢复训练示例：
 
@@ -269,46 +218,24 @@ lerobot-train \
   --resume=true
 ```
 
-## 7. 推理 / 评测
+## 6. 推理 / 评测
 
-Mars 推理与评测示例：
+推理脚本位于：
 
 - `examples/mars/evaluate.py`
 
-该脚本流程为：
+推理之前启动 Mars Host，并需要修改以下代码片段：
 
-1. 连接 `MarsClient`
-2. 从 Hub 加载策略
-3. 从**训练数据集**加载 `dataset_stats`
-4. 执行策略并记录评测 episode
-5. reset 窗口只用于人工复位，不再写入评测数据集
-
-运行前需要修改这些常量：
-
-- `REMOTE_IP`
-- `ROBOT_ID`
-- `HF_MODEL_ID`
-- `TRAIN_DATASET_REPO_ID`
-- `HF_DATASET_ID`
-- `TASK_DESCRIPTION`
-
-注意：
-
-- `TRAIN_DATASET_REPO_ID` 必须指向训练该策略所使用的数据集，不能直接用新建评测集的统计量
-- 评测脚本会把推理 episode 保存为新的 `LeRobotDataset`，便于回放和比对
-
-## 8. 推荐最小落地顺序
-
-建议按下面顺序推进：
-
-1. 先确认 `teleoperate.py` 真机稳定
-2. 用 `record.py` 录一个小规模数据集
-3. 用 `lerobot-train` 训练 `ACT`
-4. 用 `evaluate.py` 跑少量评测 episode
-5. 再根据结果决定是否继续做通用 CLI 封装
-
-## 9. 当前约束
-
-- `lerobot_teleoperate.py` 对多 teleop 场景支持仍偏弱，Mars 目前更适合先保留专用示例脚本
-- `lerobot_record.py` 已能较好支撑 LeKiwi 风格的多输入记录路径
-- Mars 训练流程当前直接复用通用 `lerobot-train`，未新增 Mars 专属训练脚本
+```bash
+REMOTE_IP = "mars_host_remote_ip"
+ROBOT_ID = "my_mars"
+TRAIN_DATASET_REPO_ID = "hf_username/mars-pick-place-move"
+NUM_EPISODES = 2
+FPS = 30
+EPISODE_TIME_SEC = 60
+RESET_TIME_SEC = 20
+TASK_DESCRIPTION = "pick and place the cube on the orange box"
+HF_MODEL_ID = "outputs/train/mars_act_pick_place_move/checkpoints/100000/pretrained_model"
+HF_DATASET_ID = "hf_username/mars-pick-place-move-eval"
+PUSH_TO_HUB = False
+```
