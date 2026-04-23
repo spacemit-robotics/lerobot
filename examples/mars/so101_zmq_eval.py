@@ -45,9 +45,9 @@ DEFAULT_RELEASE_HOLD_TIME_S = 1.0
 DEFAULT_RELEASE_DISCONNECT_DELAY_S = 5.0
 DEFAULT_GRIPPER_OPEN_POS = 100.0
 DEFAULT_GRAB_TIMEOUT_S = 40.0
-DEFAULT_ELBOW_FLEX_CLEARANCE_DELTA = -30.0
+DEFAULT_ELBOW_FLEX_CLEARANCE_DELTA = 50.0
 DEFAULT_ELBOW_FLEX_CLEARANCE_HOLD_S = 0.5
-DEFAULT_POLICY_PATH = Path("outputs/train/mars_act_pick_cube/checkpoints/100000/pretrained_model")
+DEFAULT_POLICY_PATH = Path("/root/lerobot/outputs/train/mars_act_pick_cube/checkpoints/100000/pretrained_model")
 DEFAULT_CALIBRATION_PATH = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower/my_awesome_follower_arm.json"
 
 
