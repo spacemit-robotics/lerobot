@@ -302,6 +302,7 @@ default.extend-ignore-identifiers-re = [
     "2nd",
     "pn",
     "ser",
+    "tio",
     "ein",
     "thw",
     "inpt",
