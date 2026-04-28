@@ -161,7 +161,7 @@ class SOFollower(Robot):
                 self.bus.write("P_Coefficient", motor, 16)
                 # Set I_Coefficient and D_Coefficient to default value 0 and 32
                 self.bus.write("I_Coefficient", motor, 0)
-                self.bus.write("D_Coefficient", motor, 32)
+                self.bus.write("D_Coefficient", motor, 0)
 
                 if motor == "gripper":
                     self.bus.write("Max_Torque_Limit", motor, 500)  # 50% of max torque to avoid burnout
