@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import time
+from typing import Any
+
+import numpy as np
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.utils import hw_to_dataset_features
@@ -18,20 +21,65 @@ from lerobot.utils.control_utils import init_keyboard_listener, predict_action
 from lerobot.utils.robot_utils import precise_sleep
 from lerobot.utils.utils import get_safe_torch_device
 from lerobot.utils.utils import log_say
-from lerobot.utils.visualization_utils import init_rerun, log_rerun_data
+from lerobot.utils.visualization_utils import log_rerun_data
 from common import build_mars_action_frame, build_mars_observation_frame
 
-REMOTE_IP = "10.0.90.55"
+REMOTE_IP = "127.0.0.1"
 ROBOT_ID = "my_mars"
-TRAIN_DATASET_REPO_ID = "annyi/mars-pick-place"
-NUM_EPISODES = 2
+TRAIN_DATASET_REPO_ID = "annyi/mars-pick-place-move-v2"
+NUM_EPISODES = 1
 FPS = 30
-EPISODE_TIME_SEC = 60
+EPISODE_TIME_SEC = 180
 RESET_TIME_SEC = 20
 TASK_DESCRIPTION = "pick and place the cube on the orange box"
-HF_MODEL_ID = "/home/anny/workspaces/lerobot-0.5.0/outputs/train/mars_act_pick_place/checkpoints/080000/pretrained_model"
-HF_DATASET_ID = "annyi/mars-pick-place-eval"
+HF_MODEL_ID = "/root/lerobot/outputs/train/mars_act_pick_place_move_v2/checkpoints/100000/pretrained_model"
+HF_DATASET_ID = "annyi/mars-pick-place-move-v2-eval"
 PUSH_TO_HUB = False
+PRINT_INFERENCE_VALUES = True
+BASE_VELOCITY_SCALE = 1
+ENABLE_VISUALIZATION = False
+
+
+def _format_value(value) -> float | list[float] | str:
+    """Format scalar/tensor-like values for concise inference logging."""
+    if isinstance(value, np.ndarray):
+        if value.ndim == 0:
+            return round(float(value), 6)
+        return np.round(value.astype(np.float64), 6).tolist()
+    if isinstance(value, np.generic):
+        return round(float(value), 6)
+    if isinstance(value, float):
+        return round(value, 6)
+    return value
+
+
+def _print_inference_values(action_values: Any, processed_action: dict, sent_action: dict) -> None:
+    """Print policy output and downstream Mars actions for debugging."""
+    if hasattr(action_values, "items"):
+        raw_summary = {key: _format_value(value) for key, value in action_values.items()}
+    else:
+        raw_summary = _format_value(action_values)
+    processed_summary = {key: _format_value(value) for key, value in processed_action.items()}
+    sent_summary = {
+        key: _format_value(value)
+        for key, value in sent_action.items()
+        if key != ACTION
+    }
+    print(f"[Mars Eval] policy raw action: {raw_summary}", flush=True)
+    print(f"[Mars Eval] processed action: {processed_summary}", flush=True)
+    print(f"[Mars Eval] sent action: {sent_summary}", flush=True)
+
+
+def _scale_base_velocity(action: dict[str, Any], scale: float) -> dict[str, Any]:
+    """Scale Mars base velocity outputs for quick runtime experiments."""
+    scaled_action = dict(action)
+    for key in ("x.vel", "y.vel", "theta.vel"):
+        value = scaled_action.get(key)
+        if isinstance(value, np.ndarray):
+            scaled_action[key] = value * scale
+        elif value is not None:
+            scaled_action[key] = float(value) * scale
+    return scaled_action
 
 
 def _announce(message: str) -> None:
@@ -98,8 +146,12 @@ def _run_policy_episode(
             robot_type=robot.robot_type,
         )
         act_processed_policy = make_robot_action(action_values, dataset.features)
+        act_processed_policy = _scale_base_velocity(act_processed_policy, BASE_VELOCITY_SCALE)
         robot_action_to_send = robot_action_processor((act_processed_policy, obs))
         sent_action = robot.send_action(robot_action_to_send)
+
+        if PRINT_INFERENCE_VALUES:
+            _print_inference_values(action_values, act_processed_policy, sent_action)
 
         if record_data:
             action_frame = build_mars_action_frame(dataset.features, act_processed_policy)
@@ -156,7 +208,6 @@ def main() -> None:
     _, robot_action_processor, robot_observation_processor = make_default_processors()
 
     listener, events = init_keyboard_listener()
-    init_rerun(session_name="mars_evaluate")
     should_push = False
 
     try:
@@ -179,7 +230,7 @@ def main() -> None:
                 fps=FPS,
                 control_time_s=EPISODE_TIME_SEC,
                 single_task=TASK_DESCRIPTION,
-                display_data=True,
+                display_data=ENABLE_VISUALIZATION,
                 robot_action_processor=robot_action_processor,
                 robot_observation_processor=robot_observation_processor,
             )

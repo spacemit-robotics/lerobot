@@ -2,7 +2,7 @@
 
 # Mars README
 
-这份说明对应当前仓库里的 **Mars + `MarsHost` + `MarsClient` + 真实底盘 adapter** 路径，覆盖从真机联调到数采、训练、推理的完整最小链路：
+本文介绍 Mars 机器人数采、训练、推理的完整最小链路：
 
 - 机器人侧启动 `mars_host`
 - 操作者电脑侧启动 `MarsClient`
@@ -238,4 +238,10 @@ TASK_DESCRIPTION = "pick and place the cube on the orange box"
 HF_MODEL_ID = "outputs/train/mars_act_pick_place_move/checkpoints/100000/pretrained_model"
 HF_DATASET_ID = "hf_username/mars-pick-place-move-eval"
 PUSH_TO_HUB = False
+```
+执行推理：
+
+```bash
+cd lerobot
+python examples/mars/evaluate.py
 ```
