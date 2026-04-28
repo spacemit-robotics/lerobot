@@ -23,7 +23,9 @@ def normalize_observation_for_dataset(observation: dict[str, Any]) -> dict[str, 
         if key.startswith(f"{OBS_STR}.images.") and isinstance(feature, np.ndarray)
     }
     camera_names.update(
-        key for key, value in normalized.items() if isinstance(value, np.ndarray) and key not in {OBS_STR, ACTION}
+        key
+        for key, value in normalized.items()
+        if isinstance(value, np.ndarray) and key not in {OBS_STR, ACTION}
     )
 
     for camera_name in camera_names:
@@ -52,7 +54,9 @@ def normalize_action_for_dataset(action: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def build_mars_observation_frame(dataset_features: dict[str, dict], observation: dict[str, Any]) -> dict[str, Any]:
+def build_mars_observation_frame(
+    dataset_features: dict[str, dict], observation: dict[str, Any]
+) -> dict[str, Any]:
     """Build a dataset-compatible observation frame for Mars."""
     normalized_observation = normalize_observation_for_dataset(observation)
     available_features = {}

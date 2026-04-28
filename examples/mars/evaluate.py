@@ -8,6 +8,7 @@ import time
 from typing import Any
 
 import numpy as np
+from common import build_mars_action_frame, build_mars_observation_frame
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.utils import hw_to_dataset_features
@@ -19,10 +20,8 @@ from lerobot.robots.mars import MarsClient, MarsClientConfig
 from lerobot.utils.constants import ACTION, OBS_STR
 from lerobot.utils.control_utils import init_keyboard_listener, predict_action
 from lerobot.utils.robot_utils import precise_sleep
-from lerobot.utils.utils import get_safe_torch_device
-from lerobot.utils.utils import log_say
+from lerobot.utils.utils import get_safe_torch_device, log_say
 from lerobot.utils.visualization_utils import log_rerun_data
-from common import build_mars_action_frame, build_mars_observation_frame
 
 REMOTE_IP = "127.0.0.1"
 ROBOT_ID = "my_mars"
@@ -60,11 +59,7 @@ def _print_inference_values(action_values: Any, processed_action: dict, sent_act
     else:
         raw_summary = _format_value(action_values)
     processed_summary = {key: _format_value(value) for key, value in processed_action.items()}
-    sent_summary = {
-        key: _format_value(value)
-        for key, value in sent_action.items()
-        if key != ACTION
-    }
+    sent_summary = {key: _format_value(value) for key, value in sent_action.items() if key != ACTION}
     print(f"[Mars Eval] policy raw action: {raw_summary}", flush=True)
     print(f"[Mars Eval] processed action: {processed_summary}", flush=True)
     print(f"[Mars Eval] sent action: {sent_summary}", flush=True)
@@ -97,6 +92,7 @@ def _get_available_camera_features(robot: MarsClient) -> dict[str, tuple[int, in
         if isinstance(feature, tuple) and name in observation
     }
     return available_camera_features
+
 
 def _run_policy_episode(
     robot: MarsClient,

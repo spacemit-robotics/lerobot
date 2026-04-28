@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+from common import build_mars_action_frame, build_mars_observation_frame
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.utils import hw_to_dataset_features
@@ -20,7 +21,6 @@ from lerobot.utils.control_utils import init_keyboard_listener, sanity_check_dat
 from lerobot.utils.robot_utils import precise_sleep
 from lerobot.utils.utils import log_say
 from lerobot.utils.visualization_utils import init_rerun, log_rerun_data
-from common import build_mars_action_frame, build_mars_observation_frame
 
 REMOTE_IP = "10.0.90.55"
 ROBOT_ID = "my_mars"
@@ -114,6 +114,7 @@ def _record_episode(
         timestamp += time.perf_counter() - start_loop_t
 
     return (not events["stop_recording"] or exited_early), frames_recorded
+
 
 def main() -> None:
     """Record Mars datasets with the same high-level flow as the LeKiwi example."""

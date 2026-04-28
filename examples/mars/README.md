@@ -198,7 +198,7 @@ RESUME = False
 直接复用 LeRobot 通用训练入口：
 
 ```bash
-lerobot-train \ 
+lerobot-train \
   --policy.type=act \
   --policy.repo_id=hf_username/mars_act_pick_place \
   --dataset.repo_id=hf_username/mars-pick-place \
@@ -239,6 +239,7 @@ HF_MODEL_ID = "outputs/train/mars_act_pick_place_move/checkpoints/100000/pretrai
 HF_DATASET_ID = "hf_username/mars-pick-place-move-eval"
 PUSH_TO_HUB = False
 ```
+
 执行推理：
 
 ```bash

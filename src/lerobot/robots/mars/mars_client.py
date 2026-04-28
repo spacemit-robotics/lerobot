@@ -13,8 +13,8 @@ import cv2
 import numpy as np
 
 from lerobot.cameras.configs import Cv2Rotation
-from lerobot.processor import RobotAction, RobotObservation
 from lerobot.cameras.utils import get_cv2_rotation
+from lerobot.processor import RobotAction, RobotObservation
 from lerobot.utils.constants import ACTION, OBS_STATE
 from lerobot.utils.decorators import check_if_already_connected, check_if_not_connected
 from lerobot.utils.errors import DeviceNotConnectedError
@@ -169,7 +169,9 @@ class MarsClient(Robot):
             logging.error(f"Error decoding base64 image data: {e}")
             return None
 
-    def _remote_state_from_obs(self, observation: RobotObservation) -> tuple[dict[str, np.ndarray], RobotObservation]:
+    def _remote_state_from_obs(
+        self, observation: RobotObservation
+    ) -> tuple[dict[str, np.ndarray], RobotObservation]:
         flat_state = {key: observation.get(key, 0.0) for key in self._state_order}
         state_vec = np.array([flat_state[key] for key in self._state_order], dtype=np.float32)
         obs_dict: RobotObservation = {**flat_state, OBS_STATE: state_vec}

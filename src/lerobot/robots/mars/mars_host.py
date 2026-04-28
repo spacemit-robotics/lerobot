@@ -84,7 +84,9 @@ def main(cfg: MarsServerConfig):
 
             last_observation = robot.get_observation()
             for cam_key in robot.cameras:
-                ret, buffer = cv2.imencode(".jpg", last_observation[cam_key], [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+                ret, buffer = cv2.imencode(
+                    ".jpg", last_observation[cam_key], [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+                )
                 last_observation[cam_key] = base64.b64encode(buffer).decode("utf-8") if ret else ""
 
             try:
