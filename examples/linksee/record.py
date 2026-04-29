@@ -8,12 +8,12 @@ import time
 from pathlib import Path
 
 import numpy as np
-from common import build_mars_action_frame, build_mars_observation_frame
+from common import build_linksee_action_frame, build_linksee_observation_frame
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.utils import hw_to_dataset_features
 from lerobot.processor import make_default_processors
-from lerobot.robots.mars import MarsClient, MarsClientConfig
+from lerobot.robots.linksee import LinkseeClient, LinkseeClientConfig
 from lerobot.teleoperators.keyboard.teleop_keyboard import KeyboardTeleop, KeyboardTeleopConfig
 from lerobot.teleoperators.so_leader import SO101Leader, SO101LeaderConfig
 from lerobot.utils.constants import ACTION, OBS_STR
@@ -23,9 +23,9 @@ from lerobot.utils.utils import log_say
 from lerobot.utils.visualization_utils import init_rerun, log_rerun_data
 
 REMOTE_IP = "10.0.90.55"
-ROBOT_ID = "my_mars"
+ROBOT_ID = "my_linksee"
 LEADER_PORT = "/dev/ttyACM0"
-LEADER_ID = "my_mars_leader"
+LEADER_ID = "my_linksee_leader"
 KEYBOARD_ID = "my_keyboard"
 
 NUM_EPISODES = 30
@@ -33,18 +33,18 @@ FPS = 30
 EPISODE_TIME_SEC = 600
 RESET_TIME_SEC = 20
 TASK_DESCRIPTION = "pick and place the cube on the orange box"
-HF_REPO_ID = "annyi/mars-pick-place-move"
+HF_REPO_ID = "annyi/linksee-pick-place-move"
 PUSH_TO_HUB = False
 RESUME = True
 
 
 def _announce(message: str) -> None:
-    """Always show Mars record status in terminal and via existing log/TTS path."""
+    """Always show Linksee record status in terminal and via existing log/TTS path."""
     print(message, flush=True)
     log_say(message)
 
 
-def _get_available_camera_features(robot: MarsClient) -> dict[str, tuple[int, int, int]]:
+def _get_available_camera_features(robot: LinkseeClient) -> dict[str, tuple[int, int, int]]:
     """Probe one observation and keep only cameras that are actually present."""
     observation = robot.get_observation()
     available_camera_features = {
@@ -56,7 +56,7 @@ def _get_available_camera_features(robot: MarsClient) -> dict[str, tuple[int, in
 
 
 def _record_episode(
-    robot: MarsClient,
+    robot: LinkseeClient,
     leader_arm: SO101Leader,
     keyboard: KeyboardTeleop,
     dataset: LeRobotDataset,
@@ -70,7 +70,7 @@ def _record_episode(
     display_data: bool = True,
     record_data: bool = True,
 ) -> tuple[bool, int]:
-    """Record one Mars episode using leader arm + keyboard teleop."""
+    """Record one Linksee episode using leader arm + keyboard teleop."""
     timestamp = 0.0
     exited_early = False
     frames_recorded = 0
@@ -86,7 +86,7 @@ def _record_episode(
 
         obs = robot.get_observation()
         obs_processed = robot_observation_processor(obs)
-        observation_frame = build_mars_observation_frame(dataset.features, obs)
+        observation_frame = build_linksee_observation_frame(dataset.features, obs)
 
         arm_action = leader_arm.get_action()
         arm_action = {f"arm_{k}": v for k, v in arm_action.items() if not k.startswith("arm_")}
@@ -101,7 +101,7 @@ def _record_episode(
         sent_action = robot.send_action(robot_action_to_send)
 
         if record_data:
-            action_frame = build_mars_action_frame(dataset.features, act_processed_teleop)
+            action_frame = build_linksee_action_frame(dataset.features, act_processed_teleop)
             frame = {**observation_frame, **action_frame, "task": single_task}
             dataset.add_frame(frame)
             frames_recorded += 1
@@ -117,12 +117,12 @@ def _record_episode(
 
 
 def main() -> None:
-    """Record Mars datasets with the same high-level flow as the LeKiwi example."""
-    robot_config = MarsClientConfig(remote_ip=REMOTE_IP, id=ROBOT_ID)
+    """Record Linksee datasets with the same high-level flow as the LeKiwi example."""
+    robot_config = LinkseeClientConfig(remote_ip=REMOTE_IP, id=ROBOT_ID)
     leader_arm_config = SO101LeaderConfig(port=LEADER_PORT, id=LEADER_ID)
     keyboard_config = KeyboardTeleopConfig(id=KEYBOARD_ID)
 
-    robot = MarsClient(robot_config)
+    robot = LinkseeClient(robot_config)
     leader_arm = SO101Leader(leader_arm_config)
     keyboard = KeyboardTeleop(keyboard_config)
 
@@ -170,18 +170,18 @@ def main() -> None:
     keyboard.connect()
 
     listener, events = init_keyboard_listener()
-    init_rerun(session_name="mars_record")
+    init_rerun(session_name="linksee_record")
     should_push = False
 
     try:
         if not robot.is_connected or not leader_arm.is_connected or not keyboard.is_connected:
-            raise ValueError("Mars robot or teleop is not connected!")
+            raise ValueError("Linksee robot or teleop is not connected!")
 
-        _announce("Starting Mars record loop...")
+        _announce("Starting Linksee record loop...")
         recorded_episodes = 0
         while recorded_episodes < NUM_EPISODES and not events["stop_recording"]:
             current_episode = recorded_episodes + 1
-            _announce(f"Recording Mars episode {current_episode}/{NUM_EPISODES}")
+            _announce(f"Recording Linksee episode {current_episode}/{NUM_EPISODES}")
 
             episode_completed, episode_frames = _record_episode(
                 robot=robot,
@@ -199,9 +199,9 @@ def main() -> None:
             )
 
             if episode_frames == 0:
-                _announce("No frames recorded for current Mars episode, skipping save")
+                _announce("No frames recorded for current Linksee episode, skipping save")
                 if events["rerecord_episode"]:
-                    _announce(f"Re-record Mars episode {current_episode}/{NUM_EPISODES}")
+                    _announce(f"Re-record Linksee episode {current_episode}/{NUM_EPISODES}")
                     events["rerecord_episode"] = False
                     events["exit_early"] = False
                     dataset.clear_episode_buffer()
@@ -217,7 +217,7 @@ def main() -> None:
                 (recorded_episodes < NUM_EPISODES - 1) or events["rerecord_episode"]
             ):
                 next_label = current_episode if events["rerecord_episode"] else current_episode + 1
-                _announce(f"Reset the Mars environment before episode {next_label}/{NUM_EPISODES}")
+                _announce(f"Reset the Linksee environment before episode {next_label}/{NUM_EPISODES}")
                 _, reset_frames = _record_episode(
                     robot=robot,
                     leader_arm=leader_arm,
@@ -234,22 +234,22 @@ def main() -> None:
                     record_data=False,
                 )
                 if reset_frames == 0:
-                    _announce("Mars reset window not written to dataset")
+                    _announce("Linksee reset window not written to dataset")
 
             if events["rerecord_episode"]:
-                _announce(f"Re-record Mars episode {current_episode}/{NUM_EPISODES}")
+                _announce(f"Re-record Linksee episode {current_episode}/{NUM_EPISODES}")
                 events["rerecord_episode"] = False
                 events["exit_early"] = False
                 dataset.clear_episode_buffer()
                 continue
 
             dataset.save_episode()
-            _announce(f"Saved Mars episode {current_episode}/{NUM_EPISODES}")
+            _announce(f"Saved Linksee episode {current_episode}/{NUM_EPISODES}")
             recorded_episodes += 1
 
         should_push = recorded_episodes > 0 and not events["rerecord_episode"]
     finally:
-        _announce("Stop Mars recording")
+        _announce("Stop Linksee recording")
         if robot.is_connected:
             robot.disconnect()
         if leader_arm.is_connected:

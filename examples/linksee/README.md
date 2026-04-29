@@ -1,11 +1,11 @@
 <!-- Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd. -->
 
-# Mars README
+# Linksee README
 
-本文介绍 Mars 机器人数采、训练、推理的完整最小链路：
+本文介绍 Linksee 机器人数采、训练、推理的完整最小链路：
 
-- 机器人侧启动 `mars_host`
-- 操作者电脑侧启动 `MarsClient`
+- 机器人侧启动 `linksee_host`
+- 操作者电脑侧启动 `LinkseeClient`
 - 通过：
   - `SO101 leader` 控 arm
   - 键盘控 base
@@ -14,46 +14,46 @@
 - 使用 `lerobot-train` 训练策略
 - 使用训练好的策略进行推理与评测
 
-Mars 当前采用 **LeKiwi 风格的 host/client 架构**：
+Linksee 当前采用 **LeKiwi 风格的 host/client 架构**：
 
-- 开发板作为 host：运行 `MarsHost`，负责连接并直接控制机械臂、底盘、相机等机器人侧硬件
-- 操作机作为 client：运行 `MarsClient`，负责遥操作输入、策略推理等上层控制逻辑
+- 开发板作为 host：运行 `LinkseeHost`，负责连接并直接控制机械臂、底盘、相机等机器人侧硬件
+- 操作机作为 client：运行 `LinkseeClient`，负责遥操作输入、策略推理等上层控制逻辑
 - 机械臂由 leader arm 控制
 - 底盘由键盘控制
 
 ## 1. 架构说明
 
-- `MarsHost`
+- `LinkseeHost`
   - 运行在机器人侧
-  - 直接实例化 `Mars`
-  - `Mars` 内部：
+  - 直接实例化 `Linksee`
+  - `Linksee` 内部：
     - arm 走 Feetech / SO101 控制
-    - base 走 `MarsBaseAdapter` -> vendored `third_party/chassis` 共享库
-- `MarsClient`
+    - base 走 `LinkseeBaseAdapter` -> vendored `third_party/chassis` 共享库
+- `LinkseeClient`
   - 运行在操作端电脑
   - 通过 ZMQ 发 action / 收 observation
 
-因此，只要 `mars_host` 正常启动，并且 `MarsBaseAdapter` 成功加载真实底盘库，host/client 路径就会自动走到真实底盘控制。
+因此，只要 `linksee_host` 正常启动，并且 `LinkseeBaseAdapter` 成功加载真实底盘库，host/client 路径就会自动走到真实底盘控制。
 
 ## 2. 前置条件
 
-### Mars Client
+### Linksee Client
 
 需要具备：
 
-- Mars 已接好机械臂和底盘，并且被赋予正确权限（666）
+- Linksee 已接好机械臂和底盘，并且被赋予正确权限（666）
 - 相机设备节点正确，例如 `/dev/video0` `/dev/video2`
-- Mars 底盘控制库已经编译完成，例如 `third_party/chassis/build/libchassis.so`
+- Linksee 底盘控制库已经编译完成，例如 `third_party/chassis/build/libchassis.so`
 - 已安装当前版本 LeRobot 及所需依赖
 
-### Mars Host
+### Linksee Host
 
 需要具备：
 
 - 已安装当前版本 LeRobot 及所需依赖
 - ZeroMQ 相关依赖
 - 如需执行遥操作，确保主导臂已连接、键盘相关功能键正常
-- 能访问 Mars Client IP
+- 能访问 Linksee Client IP
 
 ## 3. 遥操作
 
@@ -68,7 +68,7 @@ cd lerobot
 构建底盘共享库：
 
 ```bash
-./scripts/build_mars_chassis.sh
+./scripts/build_linksee_chassis.sh
 ```
 
 默认会产出：
@@ -78,8 +78,8 @@ cd lerobot
 启动 Host：
 
 ```bash
-python -m lerobot.robots.mars.mars_host \
-  --robot.id=my_mars \
+python -m lerobot.robots.linksee.linksee_host \
+  --robot.id=my_linksee \
   --robot.port=/dev/ttyACM0 \
   --robot.base_driver=drv_uart_esp32 \
   --robot.base_dev_path=/dev/ttyACM1 \
@@ -123,20 +123,20 @@ python -m lerobot.robots.mars.mars_host \
 
 遥操脚本位于：
 
-- `examples/mars/teleoperate.py`
+- `examples/linksee/teleoperate.py`
 
 至少修改以下代码片段：
 
 ```bash
-robot_config = MarsClientConfig(remote_ip="mars_host_remote_ip", id="my_mars")
-teleop_arm_config = SO101LeaderConfig(port="/dev/ttyACM0", id="my_mars_leader")
+robot_config = LinkseeClientConfig(remote_ip="linksee_host_remote_ip", id="my_linksee")
+teleop_arm_config = SO101LeaderConfig(port="/dev/ttyACM0", id="my_linksee_leader")
 ```
 
 ### Step C. Host 端启动 teleop
 
 ```bash
 cd lerobot
-python examples/mars/teleoperate.py
+python examples/linksee/teleoperate.py
 ```
 
 遥操路径为：
@@ -144,7 +144,7 @@ python examples/mars/teleoperate.py
 - SO101 leader arm -> arm action
 - keyboard -> base action
 
-base 默认键位来自 `MarsClientConfig.teleop_keys`：
+base 默认键位来自 `LinkseeClientConfig.teleop_keys`：
 
 - `w`: forward
 - `s`: backward
@@ -162,15 +162,15 @@ base 默认键位来自 `MarsClientConfig.teleop_keys`：
 
 数采脚本位于：
 
-- `examples/mars/record.py`
+- `examples/linksee/record.py`
 
-数采之前启动 Mars Host，并需要修改以下代码片段：
+数采之前启动 Linksee Host，并需要修改以下代码片段：
 
 ```bash
-REMOTE_IP = "mars_host_remote_ip"
-ROBOT_ID = "my_mars"
+REMOTE_IP = "linksee_host_remote_ip"
+ROBOT_ID = "my_linksee"
 LEADER_PORT = "/dev/ttyACM0"
-LEADER_ID = "my_mars_leader"
+LEADER_ID = "my_linksee_leader"
 KEYBOARD_ID = "my_keyboard"
 
 NUM_EPISODES = 30
@@ -178,7 +178,7 @@ FPS = 30
 EPISODE_TIME_SEC = 600
 RESET_TIME_SEC = 30
 TASK_DESCRIPTION = "pick and place the cube on the orange box"
-HF_REPO_ID = "hf_username/mars-pick-place-move"
+HF_REPO_ID = "hf_username/linksee-pick-place-move"
 PUSH_TO_HUB = False
 RESUME = False
 ```
@@ -200,11 +200,11 @@ RESUME = False
 ```bash
 lerobot-train \
   --policy.type=act \
-  --policy.repo_id=hf_username/mars_act_pick_place \
-  --dataset.repo_id=hf_username/mars-pick-place \
-  --dataset.root=datasets/mars-pick-place \
-  --output_dir=outputs/train/mars_act_pick_place \
-  --job_name=mars_act_pick_place \
+  --policy.repo_id=hf_username/linksee_act_pick_place \
+  --dataset.repo_id=hf_username/linksee-pick-place \
+  --dataset.root=datasets/linksee-pick-place \
+  --output_dir=outputs/train/linksee_act_pick_place \
+  --job_name=linksee_act_pick_place \
   --batch_size=4 \
   --steps=100000 \
   --policy.device=cuda
@@ -214,7 +214,7 @@ lerobot-train \
 
 ```bash
 lerobot-train \
-  --config_path=outputs/train/act_mars/checkpoints/last/pretrained_model/train_config.json \
+  --config_path=outputs/train/act_linksee/checkpoints/last/pretrained_model/train_config.json \
   --resume=true
 ```
 
@@ -222,21 +222,21 @@ lerobot-train \
 
 推理脚本位于：
 
-- `examples/mars/evaluate.py`
+- `examples/linksee/evaluate.py`
 
-推理之前启动 Mars Host，并需要修改以下代码片段：
+推理之前启动 Linksee Host，并需要修改以下代码片段：
 
 ```bash
-REMOTE_IP = "mars_host_remote_ip"
-ROBOT_ID = "my_mars"
-TRAIN_DATASET_REPO_ID = "hf_username/mars-pick-place-move"
+REMOTE_IP = "linksee_host_remote_ip"
+ROBOT_ID = "my_linksee"
+TRAIN_DATASET_REPO_ID = "hf_username/linksee-pick-place-move"
 NUM_EPISODES = 2
 FPS = 30
 EPISODE_TIME_SEC = 60
 RESET_TIME_SEC = 20
 TASK_DESCRIPTION = "pick and place the cube on the orange box"
-HF_MODEL_ID = "outputs/train/mars_act_pick_place_move/checkpoints/100000/pretrained_model"
-HF_DATASET_ID = "hf_username/mars-pick-place-move-eval"
+HF_MODEL_ID = "outputs/train/linksee_act_pick_place_move/checkpoints/100000/pretrained_model"
+HF_DATASET_ID = "hf_username/linksee-pick-place-move-eval"
 PUSH_TO_HUB = False
 ```
 
@@ -244,5 +244,5 @@ PUSH_TO_HUB = False
 
 ```bash
 cd lerobot
-python examples/mars/evaluate.py
+python examples/linksee/evaluate.py
 ```

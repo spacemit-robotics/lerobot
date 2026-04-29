@@ -15,7 +15,7 @@ from lerobot.utils.constants import ACTION, OBS_STR
 
 
 def normalize_observation_for_dataset(observation: dict[str, Any]) -> dict[str, Any]:
-    """Map Mars observation keys to dataset feature keys."""
+    """Map Linksee observation keys to dataset feature keys."""
     normalized = dict(observation)
     camera_names = {
         key.removeprefix(f"{OBS_STR}.images.")
@@ -38,7 +38,7 @@ def normalize_observation_for_dataset(observation: dict[str, Any]) -> dict[str, 
 
 
 def normalize_action_for_dataset(action: dict[str, Any]) -> dict[str, Any]:
-    """Map Mars action keys to dataset feature keys."""
+    """Map Linksee action keys to dataset feature keys."""
     normalized = dict(action)
     for key in list(action.keys()):
         value = normalized.pop(key)
@@ -54,10 +54,10 @@ def normalize_action_for_dataset(action: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def build_mars_observation_frame(
+def build_linksee_observation_frame(
     dataset_features: dict[str, dict], observation: dict[str, Any]
 ) -> dict[str, Any]:
-    """Build a dataset-compatible observation frame for Mars."""
+    """Build a dataset-compatible observation frame for Linksee."""
     normalized_observation = normalize_observation_for_dataset(observation)
     available_features = {}
     for key, feature in dataset_features.items():
@@ -78,7 +78,7 @@ def build_mars_observation_frame(
     return frame
 
 
-def build_mars_action_frame(dataset_features: dict[str, dict], action: dict[str, Any]) -> dict[str, Any]:
-    """Build a dataset-compatible action frame for Mars."""
+def build_linksee_action_frame(dataset_features: dict[str, dict], action: dict[str, Any]) -> dict[str, Any]:
+    """Build a dataset-compatible action frame for Linksee."""
     normalized_action = normalize_action_for_dataset(action)
     return build_dataset_frame(dataset_features, normalized_action, prefix=ACTION)

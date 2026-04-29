@@ -8,7 +8,7 @@ import time
 
 import numpy as np
 
-from lerobot.robots.mars import MarsClient, MarsClientConfig
+from lerobot.robots.linksee import LinkseeClient, LinkseeClientConfig
 from lerobot.teleoperators.keyboard.teleop_keyboard import KeyboardTeleop, KeyboardTeleopConfig
 from lerobot.teleoperators.so_leader import SO101Leader, SO101LeaderConfig
 from lerobot.utils.robot_utils import precise_sleep
@@ -26,24 +26,24 @@ def _stop_base_action() -> dict[str, float]:
 
 
 def main():
-    """Run minimal Mars host/client teleoperation."""
-    # 1) Mars host 必须已在机器人侧启动，例如：
-    # python -m lerobot.robots.mars.mars_host \
-    #   --robot.id=my_mars \
+    """Run minimal Linksee host/client teleoperation."""
+    # 1) Linksee host 必须已在机器人侧启动，例如：
+    # python -m lerobot.robots.linksee.linksee_host \
+    #   --robot.id=my_linksee \
     #   --robot.port=/dev/ttyACM0 \
     #   --robot.base_driver=drv_uart_esp32 \
     #   --robot.base_dev_path=/dev/ttyACM1
 
-    # 2) 本脚本运行在操作者电脑侧，通过 ZMQ 连接 Mars host。
+    # 2) 本脚本运行在操作者电脑侧，通过 ZMQ 连接 Linksee host。
     # 注意不要混淆 3 个端口/接口：
     # - --robot.port: 机器人侧 follower arm 串口
     # - --robot.base_dev_path: 机器人侧 base 串口
     # - SO101LeaderConfig(port=...): 操作端 leader arm 串口
-    robot_config = MarsClientConfig(remote_ip="10.0.90.55", id="my_mars")
-    teleop_arm_config = SO101LeaderConfig(port="/dev/ttyACM0", id="my_mars_leader")
+    robot_config = LinkseeClientConfig(remote_ip="10.0.90.55", id="my_linksee")
+    teleop_arm_config = SO101LeaderConfig(port="/dev/ttyACM0", id="my_linksee_leader")
     keyboard_config = KeyboardTeleopConfig(id="my_keyboard")
 
-    robot = MarsClient(robot_config)
+    robot = LinkseeClient(robot_config)
     leader_arm = SO101Leader(teleop_arm_config)
     keyboard = KeyboardTeleop(keyboard_config)
 
@@ -51,12 +51,12 @@ def main():
     leader_arm.connect()
     keyboard.connect()
 
-    init_rerun(session_name="mars_host_client_teleop")
+    init_rerun(session_name="linksee_host_client_teleop")
 
     if not robot.is_connected or not leader_arm.is_connected or not keyboard.is_connected:
-        raise RuntimeError("Mars robot or teleop device is not connected")
+        raise RuntimeError("Linksee robot or teleop device is not connected")
 
-    print("Starting Mars host/client teleop loop...")
+    print("Starting Linksee host/client teleop loop...")
     print("Press q to stop the teleop loop. The script will send a zero base command before exit.")
     try:
         while True:

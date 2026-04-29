@@ -5,6 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from .config import RobotConfig
-from .mars import Mars, MarsClient, MarsClientConfig, MarsConfig
+from .linksee import Linksee, LinkseeClient, LinkseeClientConfig, LinkseeConfig
 from .robot import Robot
 from .utils import make_robot_from_config

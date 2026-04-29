@@ -35,14 +35,14 @@ def make_robot_from_config(config: RobotConfig) -> Robot:
         from .lekiwi import LeKiwi
 
         return LeKiwi(config)
-    elif config.type == "mars":
-        from .mars import Mars
+    elif config.type == "linksee":
+        from .linksee import Linksee
 
-        return Mars(config)
-    elif config.type == "mars_client":
-        from .mars import MarsClient
+        return Linksee(config)
+    elif config.type == "linksee_client":
+        from .linksee import LinkseeClient
 
-        return MarsClient(config)
+        return LinkseeClient(config)
     elif config.type == "hope_jr_hand":
         from .hope_jr import HopeJrHand
 
