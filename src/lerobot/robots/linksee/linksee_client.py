@@ -20,14 +20,14 @@ from lerobot.utils.decorators import check_if_already_connected, check_if_not_co
 from lerobot.utils.errors import DeviceNotConnectedError
 
 from ..robot import Robot
-from .config_mars import MarsClientConfig
+from .config_linksee import LinkseeClientConfig
 
 
-class MarsClient(Robot):
-    config_class = MarsClientConfig
-    name = "mars_client"
+class LinkseeClient(Robot):
+    config_class = LinkseeClientConfig
+    name = "linksee_client"
 
-    def __init__(self, config: MarsClientConfig):
+    def __init__(self, config: LinkseeClientConfig):
         import zmq
 
         self._zmq = zmq
@@ -121,7 +121,7 @@ class MarsClient(Robot):
         poller.register(self.zmq_observation_socket, zmq.POLLIN)
         socks = dict(poller.poll(self.connect_timeout_s * 1000))
         if self.zmq_observation_socket not in socks or socks[self.zmq_observation_socket] != zmq.POLLIN:
-            raise DeviceNotConnectedError("Timeout waiting for Mars Host to connect expired.")
+            raise DeviceNotConnectedError("Timeout waiting for Linksee Host to connect expired.")
 
         self._is_connected = True
 
@@ -244,7 +244,7 @@ class MarsClient(Robot):
     @check_if_not_connected
     def send_action(self, action: RobotAction) -> RobotAction:
         if self.zmq_cmd_socket is None:
-            raise DeviceNotConnectedError("Mars client command socket is not connected.")
+            raise DeviceNotConnectedError("Linksee client command socket is not connected.")
 
         self.zmq_cmd_socket.send_string(json.dumps(action))
         actions = np.array([action.get(k, 0.0) for k in self._state_order], dtype=np.float32)

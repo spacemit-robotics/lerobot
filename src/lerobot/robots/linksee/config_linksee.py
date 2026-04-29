@@ -11,7 +11,7 @@ from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
 from ..config import RobotConfig
 
 
-def mars_cameras_config() -> dict[str, CameraConfig]:
+def linksee_cameras_config() -> dict[str, CameraConfig]:
     return {
         "front": OpenCVCameraConfig(
             index_or_path="/dev/video0", fps=30, width=640, height=480, rotation=Cv2Rotation.ROTATE_180
@@ -22,15 +22,15 @@ def mars_cameras_config() -> dict[str, CameraConfig]:
     }
 
 
-@RobotConfig.register_subclass("mars")
+@RobotConfig.register_subclass("linksee")
 @dataclass
-class MarsConfig(RobotConfig):
+class LinkseeConfig(RobotConfig):
     port: str = "/dev/ttyACM0"
     disable_torque_on_disconnect: bool = True
     max_relative_target: float | dict[str, float] | None = None
-    cameras: dict[str, CameraConfig] = field(default_factory=mars_cameras_config)
+    cameras: dict[str, CameraConfig] = field(default_factory=linksee_cameras_config)
     use_degrees: bool = False
-    # Mars base defaults to UART transport.
+    # Linksee base defaults to UART transport.
     # Keep RPMSG fields below only for optional compatibility with older deployments.
     base_driver: str = "drv_uart_esp32"
     base_control_library_path: str | None = None
@@ -50,9 +50,9 @@ class MarsConfig(RobotConfig):
     base_rpmsg_remote_addr: int = 1002
 
 
-@RobotConfig.register_subclass("mars_host")
+@RobotConfig.register_subclass("linksee_host")
 @dataclass
-class MarsHostConfig:
+class LinkseeHostConfig:
     port_zmq_cmd: int = 5565
     port_zmq_observations: int = 5566
     connection_time_s: int = 30
@@ -60,11 +60,11 @@ class MarsHostConfig:
     max_loop_freq_hz: int = 30
 
 
-@RobotConfig.register_subclass("mars_client")
+@RobotConfig.register_subclass("linksee_client")
 @dataclass
-class MarsClientConfig(RobotConfig):
+class LinkseeClientConfig(RobotConfig):
     remote_ip: str
-    host_type: str = "mars_host"
+    host_type: str = "linksee_host"
     port_zmq_cmd: int = 5565
     port_zmq_observations: int = 5566
     teleop_keys: dict[str, str] = field(
@@ -80,6 +80,6 @@ class MarsClientConfig(RobotConfig):
             "quit": "q",
         }
     )
-    cameras: dict[str, CameraConfig] = field(default_factory=mars_cameras_config)
+    cameras: dict[str, CameraConfig] = field(default_factory=linksee_cameras_config)
     polling_timeout_ms: int = 15
     connect_timeout_s: int = 5

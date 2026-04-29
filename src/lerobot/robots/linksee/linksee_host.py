@@ -13,18 +13,18 @@ import cv2
 import draccus
 import zmq
 
-from .config_mars import MarsConfig, MarsHostConfig
-from .mars import Mars
+from .config_linksee import LinkseeConfig, LinkseeHostConfig
+from .linksee import Linksee
 
 
 @dataclass
-class MarsServerConfig:
-    robot: MarsConfig = field(default_factory=MarsConfig)
-    host: MarsHostConfig = field(default_factory=MarsHostConfig)
+class LinkseeServerConfig:
+    robot: LinkseeConfig = field(default_factory=LinkseeConfig)
+    host: LinkseeHostConfig = field(default_factory=LinkseeHostConfig)
 
 
-class MarsHost:
-    def __init__(self, config: MarsHostConfig):
+class LinkseeHost:
+    def __init__(self, config: LinkseeHostConfig):
         self.zmq_context = zmq.Context()
         self.zmq_cmd_socket = self.zmq_context.socket(zmq.PULL)
         self.zmq_cmd_socket.setsockopt(zmq.CONFLATE, 1)
@@ -45,16 +45,16 @@ class MarsHost:
 
 
 @draccus.wrap()
-def main(cfg: MarsServerConfig):
-    """Run Mars host process near the robot hardware."""
-    logging.info("Configuring Mars")
-    robot = Mars(cfg.robot)
+def main(cfg: LinkseeServerConfig):
+    """Run Linksee host process near the robot hardware."""
+    logging.info("Configuring Linksee")
+    robot = Linksee(cfg.robot)
 
-    logging.info("Connecting Mars")
+    logging.info("Connecting Linksee")
     robot.connect()
 
-    logging.info("Starting Mars host")
-    host = MarsHost(cfg.host)
+    logging.info("Starting Linksee host")
+    host = LinkseeHost(cfg.host)
 
     last_cmd_time = time.time()
     watchdog_active = False
@@ -100,11 +100,11 @@ def main(cfg: MarsServerConfig):
     except KeyboardInterrupt:
         print("Keyboard interrupt received. Exiting...")
     finally:
-        print("Shutting down Mars Host.")
+        print("Shutting down Linksee Host.")
         robot.disconnect()
         host.disconnect()
 
-    logging.info("Finished Mars cleanly")
+    logging.info("Finished Linksee cleanly")
 
 
 if __name__ == "__main__":

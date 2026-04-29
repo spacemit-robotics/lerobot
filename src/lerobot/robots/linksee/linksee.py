@@ -17,7 +17,7 @@ from lerobot.utils.decorators import check_if_already_connected, check_if_not_co
 
 from ..robot import Robot
 from ..utils import ensure_safe_goal_position
-from .config_mars import MarsConfig
+from .config_linksee import LinkseeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +63,8 @@ class ChassisRPMSGConfig(ctypes.Structure):
     ]
 
 
-class MarsBaseAdapter:
-    """Bridge Mars base commands to the external SpacemiT chassis control library."""
+class LinkseeBaseAdapter:
+    """Bridge Linksee base commands to the external SpacemiT chassis control library."""
 
     CHASSIS_TYPE_MAP = {
         "diff_2wd": 0,
@@ -79,7 +79,7 @@ class MarsBaseAdapter:
         REPO_ROOT / "third_party/chassis/build/libbase.so",
     )
 
-    def __init__(self, robot: "Mars"):
+    def __init__(self, robot: "Linksee"):
         self.robot = robot
 
         self._lib: ctypes.CDLL | None = None
@@ -98,7 +98,7 @@ class MarsBaseAdapter:
             candidate = Path(configured).expanduser()
             if candidate.is_file():
                 return candidate
-            raise FileNotFoundError(f"Configured Mars base library not found: {candidate}")
+            raise FileNotFoundError(f"Configured Linksee base library not found: {candidate}")
 
         for candidate in self.DEFAULT_LIBRARY_CANDIDATES:
             if candidate.is_file():
@@ -106,8 +106,8 @@ class MarsBaseAdapter:
 
         raise FileNotFoundError(
             "Could not locate the SpacemiT chassis control shared library. "
-            "Build third_party/chassis (for example with scripts/build_mars_chassis.sh) "
-            "or set MarsConfig.base_control_library_path."
+            "Build third_party/chassis (for example with scripts/build_linksee_chassis.sh) "
+            "or set LinkseeConfig.base_control_library_path."
         )
 
     def _load_library(self) -> ctypes.CDLL:
@@ -133,14 +133,14 @@ class MarsBaseAdapter:
         lib.chassis_free.argtypes = [ctypes.c_void_p]
         lib.chassis_free.restype = None
         self._lib = lib
-        logger.info("Loaded Mars base control library from %s", library_path)
+        logger.info("Loaded Linksee base control library from %s", library_path)
         return lib
 
     def _make_base_config(self) -> ChassisConfig:
         chassis_type = self.CHASSIS_TYPE_MAP.get(self.robot.config.base_type.lower())
         if chassis_type is None:
             raise ValueError(
-                f"Unsupported Mars base_type '{self.robot.config.base_type}'. "
+                f"Unsupported Linksee base_type '{self.robot.config.base_type}'. "
                 f"Expected one of {sorted(self.CHASSIS_TYPE_MAP)}."
             )
 
@@ -179,7 +179,7 @@ class MarsBaseAdapter:
             )
         else:
             raise ValueError(
-                f"Unsupported Mars base_driver '{self.robot.config.base_driver}'. "
+                f"Unsupported Linksee base_driver '{self.robot.config.base_driver}'. "
                 "Expected 'drv_uart_esp32' or 'drv_rpmsg_esos'."
             )
 
@@ -187,34 +187,34 @@ class MarsBaseAdapter:
         self._dev = lib.chassis_alloc(driver_name, ctypes.byref(config))
         if not self._dev:
             raise ConnectionError(
-                "Failed to allocate Mars base chassis device. "
+                "Failed to allocate Linksee base chassis device. "
                 "Check the shared library, driver name, and base transport settings."
             )
 
         self._connected = True
-        logger.info("Mars base adapter connected using %s", self.robot.config.base_driver)
+        logger.info("Linksee base adapter connected using %s", self.robot.config.base_driver)
 
     def send_velocity(self, x: float, y: float, theta: float) -> dict[str, float]:
         if not self._connected or self._lib is None or self._dev is None:
-            raise ConnectionError("Mars base adapter is not connected")
+            raise ConnectionError("Linksee base adapter is not connected")
 
         command = ChassisVelocity(vx=x, vy=y, wz=theta)
         status = self._lib.chassis_set_velocity(self._dev, ctypes.byref(command))
         if status != 0:
-            raise RuntimeError(f"Failed to send Mars base velocity command, status={status}")
+            raise RuntimeError(f"Failed to send Linksee base velocity command, status={status}")
 
         self._last_velocity = {"x.vel": x, "y.vel": y, "theta.vel": theta}
         return dict(self._last_velocity)
 
     def get_state(self) -> dict[str, float]:
         if not self._connected or self._lib is None or self._dev is None:
-            raise ConnectionError("Mars base adapter is not connected")
+            raise ConnectionError("Linksee base adapter is not connected")
 
         vel = ChassisVelocity()
         pose = ChassisPose()
         status = self._lib.chassis_get_odom(self._dev, ctypes.byref(vel), ctypes.byref(pose))
         if status != 0:
-            logger.warning("Failed to read Mars base odometry, status=%s. Reusing last velocity.", status)
+            logger.warning("Failed to read Linksee base odometry, status=%s. Reusing last velocity.", status)
             return dict(self._last_velocity)
 
         self._last_velocity = {"x.vel": float(vel.vx), "y.vel": float(vel.vy), "theta.vel": float(vel.wz)}
@@ -238,13 +238,13 @@ class MarsBaseAdapter:
             self._connected = False
 
 
-class Mars(Robot):
-    """Mars mobile manipulator using SO101 arm control plus external base adapter."""
+class Linksee(Robot):
+    """Linksee mobile manipulator using SO101 arm control plus external base adapter."""
 
-    config_class = MarsConfig
-    name = "mars"
+    config_class = LinkseeConfig
+    name = "linksee"
 
-    def __init__(self, config: MarsConfig):
+    def __init__(self, config: LinkseeConfig):
         super().__init__(config)
         self.config = config
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
@@ -261,7 +261,7 @@ class Mars(Robot):
             calibration=self.calibration,
         )
         self.arm_motors = [motor for motor in self.bus.motors if motor.startswith("arm")]
-        self.base_adapter = MarsBaseAdapter(self)
+        self.base_adapter = LinkseeBaseAdapter(self)
         self.cameras = make_cameras_from_configs(config.cameras)
 
     @property
