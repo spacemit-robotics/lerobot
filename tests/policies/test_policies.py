@@ -388,6 +388,14 @@ def test_backward_compatibility(ds_repo_id: str, policy_name: str, policy_kwargs
 
     ds_name = ds_repo_id.split("/")[-1]
     artifact_dir = Path("tests/artifacts/policies") / f"{ds_name}_{policy_name}_{file_name_extra}"
+    required_files = [
+        artifact_dir / "output_dict.safetensors",
+        artifact_dir / "grad_stats.safetensors",
+        artifact_dir / "param_stats.safetensors",
+        artifact_dir / "actions.safetensors",
+    ]
+    if not all(path.is_file() for path in required_files):
+        pytest.skip(f"Missing policy artifacts under {artifact_dir}")
     saved_output_dict = load_file(artifact_dir / "output_dict.safetensors")
     saved_grad_stats = load_file(artifact_dir / "grad_stats.safetensors")
     saved_param_stats = load_file(artifact_dir / "param_stats.safetensors")
