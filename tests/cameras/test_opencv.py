@@ -81,6 +81,28 @@ TEST_IMAGE_SIZES = ["128x128", "160x120", "320x180", "480x270"]
 TEST_IMAGE_PATHS = [TEST_ARTIFACTS_DIR / f"image_{size}.png" for size in TEST_IMAGE_SIZES]
 
 
+def _create_test_image(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    dimensions = path.stem.split("_")[-1]
+    width, height = map(int, dimensions.split("x"))
+
+    x_gradient = np.linspace(0, 255, width, dtype=np.uint8)
+    y_gradient = np.linspace(0, 255, height, dtype=np.uint8)
+    xv = np.tile(x_gradient, (height, 1))
+    yv = np.tile(y_gradient[:, None], (1, width))
+    image = np.stack((xv, yv, np.full((height, width), 127, dtype=np.uint8)), axis=-1)
+
+    if not cv2.imwrite(str(path), image):
+        raise RuntimeError(f"Failed to create OpenCV test artifact: {path}")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def ensure_test_artifacts_exist():
+    for image_path in TEST_IMAGE_PATHS:
+        if not image_path.exists():
+            _create_test_image(image_path)
+
+
 def test_abc_implementation():
     """Instantiation should raise an error if the class doesn't implement abstract methods/properties."""
     config = OpenCVCameraConfig(index_or_path=0)
