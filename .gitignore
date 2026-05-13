@@ -171,6 +171,11 @@ outputs/
 *.mo
 *.pot
 
+# Optional generated / downloaded test artifacts
+tests/artifacts/**/*.safetensors
+tests/artifacts/cameras/*.png
+tests/artifacts/cameras/*.bag
+
 # Dev folders
 .cache/*
 *.stl
