@@ -6,7 +6,7 @@
 The comparison is done in the *normalized* space on the raw action chunk
 (B, chunk_size, action_dim), which is exactly what the ONNX graph emits. The
 PyTorch reference is ``ACT.forward`` inference branch (latent=0, no VAE encoder),
-matching ``tools/export_act_to_onnx.py``.
+matching ``tools/act_pytorch_to_onnx.py``.
 
 Inputs are generated from a fixed seed so the ONNX-only run on K3 and a
 PyTorch run elsewhere use identical tensors.
@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 import onnxruntime as ort
 
-# This script lives in ``examples/onnx_inference_act/tools/`` alongside
+# This script lives in ``examples/onnx_inference/tools/`` alongside
 # ``act_pytorch_to_onnx.py`` (which provides ``ACTInferenceModule``).
 TOOLS_DIR = Path(__file__).resolve().parent
 EXAMPLE_DIR = TOOLS_DIR.parent

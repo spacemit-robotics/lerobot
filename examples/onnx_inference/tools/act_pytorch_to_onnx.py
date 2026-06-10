@@ -22,10 +22,10 @@ Usage:
       --output-dir models/onnx/act-fp32
 
   # Also emit Plan B (backbone + transformer) graphs
-  python tools/export_act_to_onnx.py --checkpoint <ckpt> --split backbone
+  python tools/act_pytorch_to_onnx.py --checkpoint <ckpt> --split backbone
 
   # Skip numerical validation (faster)
-  python tools/export_act_to_onnx.py --checkpoint <ckpt> --no-validate
+  python tools/act_pytorch_to_onnx.py --checkpoint <ckpt> --no-validate
 """
 from __future__ import annotations
 

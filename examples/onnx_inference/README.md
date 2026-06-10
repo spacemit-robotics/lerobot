@@ -1,11 +1,11 @@
-# onnx_inference_act
+# onnx_inference
 
 ONNX 推理示例目录，包含 ACT 策略模型的 Python 和 C++ 部署通路。
 
 ## 目录结构
 
 ```text
-onnx_inference_act/
+onnx_inference/
 ├── models/
 │   ├── onnx/                       # onnx 模型目录
 │   │   ├── act-fp32/

@@ -11,7 +11,6 @@ cpp/
 ├── act_benchmark.cpp                     # ACT dummy benchmark 入口
 ├── act_evaluate.cpp                      # ACT 真机/离线测试入口
 ├── CMakeLists.txt                        # C++ 构建入口
-├── run_test.sh                           # 模型前向推理时延测试工具
 ├── inputs/                               # ACT 离线测试输入样例
 ├── utils/
 │   ├── common.h                          # Timer / npy 读取等公共工具
@@ -28,20 +27,16 @@ K3 板端推荐安装系统包，不要把 SpaceMIT ORT SDK 目录提交到仓�
 sudo apt-get install -y spacemit-onnxruntime python3-spacemit-ort
 ```
 
-CMake 默认从系统路径查找 `spacemit_ort_env.h`、`libonnxruntime.so` 和
-`libspacemit_ep.so`。如需使用单独下载的 SDK，可通过 `SPACEMIT_ORT_DIR`
-指定外部路径。
-
 ## 构建
 
 ```bash
-cd examples/onnx_inference_act/cpp
+cd examples/onnx_inference/cpp
 mkdir -p build && cd build
 cmake ..
 make -j4
 ```
 
-如需使用其他 SDK 路径：
+如需使用其他 ORT SDK 路径：
 
 ```bash
 cmake .. -DSPACEMIT_ORT_DIR=/path/to/spacemit-ort-sdk
@@ -69,7 +64,7 @@ ONNX 模型和离线输入：
 ### ACT
 
 ```bash
-./act_benchmark ../../models/onnx/act-fp32/act.onnx -s -t 8 -a "8;9;10;11;12;13;14;15" \
+./act_benchmark ../../models/onnx/act-fp32/act.onnx \
   --images-npy ../inputs/images.npy \
   --state-npy ../inputs/state_deg.npy \
   -s -t 8 -a "8;9;10;11;12;13;14;15" \
@@ -86,29 +81,4 @@ ONNX 模型和离线输入：
   --port /dev/ttyACM0 --cam top=15 --cam wrist=13 \
   --fps 30 --episode-time 180 \
   -s -t 8 -a "8;9;10;11;12;13;14;15"
-```
-
-## 测试工具
-
-`run_test.sh` 基于 `onnxruntime_perf_test` 工具封装，用于测试单个 onnx
-模型在不同情况下的前向推理时延。测试方法为：
-
-```bash
-./run_test.sh use_self_ep model_path intra_threads
-```
-
-参数说明：
-
-- `use_self_ep`：是否启用自定义算子优化开关。支持 `true` / `false` / `1` / `0`。
-- `model_path`：待测试的 ONNX 模型路径。
-- `intra_threads`：ORT intra-op 线程数，必须为正整数。
-
-示例：
-
-```bash
-# 启用自定义算子优化开关
-./run_test.sh true ../models/onnx/act-int8/act.q.onnx 8
-
-# 使用 ref profile 对照测试
-./run_test.sh false ../models/onnx/act-int8/act.q.onnx 8
 ```
