@@ -44,6 +44,7 @@ from pathlib import Path
 
 import numpy as np
 from utils import safe_disconnect, suspend_sigint
+from utils.act_runtime import build_session as build_ort_session
 
 EXAMPLE_DIR = Path(__file__).resolve().parent
 
@@ -146,40 +147,6 @@ def unnormalize_action(action: np.ndarray, mean: np.ndarray, std: np.ndarray) ->
 
 
 # --------------------------------------------------------------------------- #
-# ONNX session
-# --------------------------------------------------------------------------- #
-def build_session(
-    onnx_path: Path, use_spacemit_ep: bool, ep_threads: int, ep_affinity: str, cpu_threads: int
-):
-    import onnxruntime as ort
-
-    so = ort.SessionOptions()
-    so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-    if cpu_threads > 0:
-        so.intra_op_num_threads = cpu_threads
-
-    providers: list = ["CPUExecutionProvider"]
-    provider_options: list = [{}]
-    if use_spacemit_ep:
-        # Registering the EP requires importing spacemit_ort first; it does not
-        # show up in get_available_providers() until then.
-        import spacemit_ort  # noqa: F401
-
-        opts = {"SPACEMIT_EP_INTRA_THREAD_NUM": str(ep_threads)}
-        if ep_affinity:
-            opts["SPACEMIT_EP_INTRA_THREAD_AFFINITY"] = ep_affinity
-        providers = ["SpaceMITExecutionProvider", "CPUExecutionProvider"]
-        provider_options = [opts, {}]
-
-    sess = ort.InferenceSession(
-        str(onnx_path), sess_options=so, providers=providers, provider_options=provider_options
-    )
-    in_names = [i.name for i in sess.get_inputs()]
-    out_names = [o.name for o in sess.get_outputs()]
-    return sess, in_names, out_names
-
-
-# --------------------------------------------------------------------------- #
 # Robot
 # --------------------------------------------------------------------------- #
 def build_robot(
@@ -224,7 +191,7 @@ def predict_chunk(sess, in_names, out_names, images_nchw, state_vec, meta, stats
 
 def run_episode(robot, sess, in_names, out_names, meta, stats, args):
     n_action_steps = min(args.n_action_steps or meta["n_action_steps"], meta["chunk_size"])
-    queue: deque[np.ndarray] = deque(maxlen=n_action_steps)
+    queue: deque[np.ndarray] = deque()
 
     inference_ms: list[float] = []
     loop_ms: list[float] = []
@@ -388,12 +355,14 @@ def main() -> None:
     if missing:
         raise SystemExit(f"Missing --cam mapping for camera(s): {missing}")
 
-    sess, in_names, out_names = build_session(
+    sess, session_ms = build_ort_session(
         args.onnx, args.use_spacemit_ep, args.ep_threads, args.ep_affinity, args.cpu_threads
     )
+    in_names = [i.name for i in sess.get_inputs()]
+    out_names = [o.name for o in sess.get_outputs()]
     print(
         f"[ACT ONNX] ONNX inputs={in_names} outputs={out_names} "
-        f"provider={'SpaceMIT EP' if args.use_spacemit_ep else 'CPU'}"
+        f"provider={'SpaceMIT EP' if args.use_spacemit_ep else 'CPU'} load={session_ms:.1f}ms"
     )
 
     robot = build_robot(args.port, args.robot_id, cam_map, args.width, args.height, args.cam_fps, args.fourcc)

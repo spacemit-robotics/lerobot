@@ -65,7 +65,7 @@ inline std::vector<float> LoadNpyF32(const std::string& path, std::vector<int64_
     shape.clear();
     size_t sp = header.find("(", header.find("shape"));
     size_t ep = header.find(")", sp);
-    if (sp == std::string::npos || ep == std::string::npos || ep <= sp + 1)
+    if (sp == std::string::npos || ep == std::string::npos || ep == sp + 1)
         throw std::runtime_error("npy shape must have at least one dimension: " + path);
     std::string dims = header.substr(sp + 1, ep - sp - 1);
     size_t total = 1;
@@ -79,6 +79,8 @@ inline std::vector<float> LoadNpyF32(const std::string& path, std::vector<int64_
         shape.push_back(v);
         total *= v;
     }
+    if (shape.empty())
+        throw std::runtime_error("npy shape must have at least one dimension: " + path);
     std::vector<float> data(total);
     f.read(reinterpret_cast<char*>(data.data()), total * sizeof(float));
     return data;

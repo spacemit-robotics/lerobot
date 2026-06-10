@@ -385,18 +385,27 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
 
     // ---- Open 6 motors (ID from calibration) on one bus ----
     vector<struct motor_dev*> motors(S, nullptr);
+    auto release_cameras = [&]() {
+        for (auto& cap : caps) {
+            if (cap.isOpened()) cap.release();
+        }
+    };
+    int allocated_motors = 0;
     for (int i = 0; i < S; ++i) {
         motors[i] = motor_alloc_uart("drv_uart_feetech", cfg.port.c_str(), cfg.baud,
             (uint8_t)st.calib[i].id, nullptr);
         if (!motors[i]) {
             cerr << "motor_alloc failed: " << st.motor_order[i] << "\n";
-            motor_free(motors.data(), (uint32_t)i);
+            motor_free(motors.data(), (uint32_t)allocated_motors);
+            release_cameras();
             return 2;
         }
+        ++allocated_motors;
     }
     if (motor_init(motors.data(), S) != 0) {
         cerr << "motor_init failed\n";
-        motor_free(motors.data(), S);
+        motor_free(motors.data(), (uint32_t)allocated_motors);
+        release_cameras();
         return 2;
     }
     cout << "[robot] " << S << " motors on " << cfg.port << " @ " << cfg.baud << "\n";
@@ -510,9 +519,7 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
     for (auto& c : idle) c.mode = MOTOR_MODE_IDLE;
     motor_set_cmds(motors.data(), idle.data(), S);
     motor_free(motors.data(), S);
-    for (auto& cap : caps) {
-        if (cap.isOpened()) cap.release();
-    }
+    release_cameras();
 
     auto report = [](const char* tag, vector<double>& v) {
         if (v.empty()) return;
