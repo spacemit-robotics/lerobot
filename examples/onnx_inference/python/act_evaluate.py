@@ -158,7 +158,9 @@ def unnormalize_action(action: np.ndarray, mean: np.ndarray, std: np.ndarray) ->
 # --------------------------------------------------------------------------- #
 # Robot
 # --------------------------------------------------------------------------- #
-def build_robot(port: str, robot_id: str, cam_map: dict[str, int], width: int, height: int, fps: int, fourcc: str):
+def build_robot(
+    port: str, robot_id: str, cam_map: dict[str, int], width: int, height: int, fps: int, fourcc: str
+):
     from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
     from lerobot.robots.so_follower.config_so_follower import SO101FollowerConfig
     from lerobot.robots.so_follower.so_follower import SO101Follower
@@ -306,7 +308,9 @@ def parse_args() -> argparse.Namespace:
     )
     # robot
     p.add_argument("--port", default="/dev/ttyACM0", help="SO-101 serial port")
-    p.add_argument("--robot-id", default="my_awesome_follower_arm", help="Robot id (selects the calibration file)")
+    p.add_argument(
+        "--robot-id", default="my_awesome_follower_arm", help="Robot id (selects the calibration file)"
+    )
     p.add_argument(
         "--cam",
         action="append",

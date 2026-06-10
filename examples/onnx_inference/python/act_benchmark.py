@@ -40,12 +40,16 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Path to pretrained_model dir for config and normalization stats",
     )
-    parser.add_argument("--use-spacemit-ep", action="store_true", help="Use SpaceMITExecutionProvider if available")
+    parser.add_argument(
+        "--use-spacemit-ep", action="store_true", help="Use SpaceMITExecutionProvider if available"
+    )
     parser.add_argument("--ep-threads", type=int, default=8, help="SpaceMIT EP intra thread count")
     parser.add_argument(
         "--ep-affinity", default="8;9;10;11;12;13;14;15", help="SpaceMIT EP intra thread affinity string"
     )
-    parser.add_argument("--cpu-threads", type=int, default=0, help="ORT CPU intra-op thread count (0 = default)")
+    parser.add_argument(
+        "--cpu-threads", type=int, default=0, help="ORT CPU intra-op thread count (0 = default)"
+    )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
     parser.add_argument("--iters", type=int, default=20, help="Measurement iterations")
     parser.add_argument("--batch", type=int, default=1, help="Batch size for random inputs")

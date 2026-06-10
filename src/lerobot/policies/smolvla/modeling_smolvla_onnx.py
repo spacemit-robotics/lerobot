@@ -163,7 +163,9 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
                 providers = ["CPUExecutionProvider"]
 
             try:
-                session = ort.InferenceSession(str(model_path), sess_options=sess_options, providers=providers)
+                session = ort.InferenceSession(
+                    str(model_path), sess_options=sess_options, providers=providers
+                )
                 self.sessions[key] = session
                 active = session.get_providers()
                 print(f"[SmolVLA ONNX] Loaded {filename} ({active[0]})")
@@ -280,7 +282,9 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
             img = images[:, i, :, :, :]  # [batch, 3, H, W]
             # Resize to 512x512 if needed
             if img.shape[-2:] != (512, 512):
-                img = torch.nn.functional.interpolate(img, size=(512, 512), mode="bilinear", align_corners=False)
+                img = torch.nn.functional.interpolate(
+                    img, size=(512, 512), mode="bilinear", align_corners=False
+                )
             img_np = self._to_numpy(img)
 
             vision_outputs = self._run_onnx_session("vision", {"image": img_np})

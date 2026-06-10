@@ -94,7 +94,9 @@ def build_session(
             if ep_affinity:
                 ep_opt["SPACEMIT_EP_INTRA_THREAD_AFFINITY"] = ep_affinity
             provider_options = [ep_opt, {}]
-    sess = ort.InferenceSession(str(onnx_path), sess_options=so, providers=providers, provider_options=provider_options)
+    sess = ort.InferenceSession(
+        str(onnx_path), sess_options=so, providers=providers, provider_options=provider_options
+    )
     print(f"[onnx] providers={sess.get_providers()}")
     return sess
 
@@ -110,7 +112,9 @@ def run_onnx(sess: ort.InferenceSession, inputs: dict[str, np.ndarray], warmup: 
         out = sess.run(None, feed)
         times.append((time.perf_counter() - t0) * 1000.0)
     actions = np.asarray(out[0], dtype=np.float32)
-    print(f"[onnx] output shape={actions.shape} latency: mean={np.mean(times):.2f}ms min={np.min(times):.2f}ms")
+    print(
+        f"[onnx] output shape={actions.shape} latency: mean={np.mean(times):.2f}ms min={np.min(times):.2f}ms"
+    )
     return actions
 
 

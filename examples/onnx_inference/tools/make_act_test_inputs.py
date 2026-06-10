@@ -68,13 +68,13 @@ def parse_stats(path: Path) -> dict:
         elif key in ("state_mean", "state_std", "action_mean", "action_std"):
             s[key] = np.array([float(x) for x in vals], dtype=np.float32)
         elif key.startswith("image_mean."):
-            s["image_mean"][key[len("image_mean.") :]] = np.array([float(x) for x in vals], dtype=np.float32).reshape(
-                3, 1, 1
-            )
+            s["image_mean"][key[len("image_mean.") :]] = np.array(
+                [float(x) for x in vals], dtype=np.float32
+            ).reshape(3, 1, 1)
         elif key.startswith("image_std."):
-            s["image_std"][key[len("image_std.") :]] = np.array([float(x) for x in vals], dtype=np.float32).reshape(
-                3, 1, 1
-            )
+            s["image_std"][key[len("image_std.") :]] = np.array(
+                [float(x) for x in vals], dtype=np.float32
+            ).reshape(3, 1, 1)
         elif key == "calib":
             name = vals[0]
             d, i = {}, 1
@@ -125,7 +125,9 @@ def main():
     state_dim = st["state_dim"]
     rng = np.random.default_rng(args.seed)
 
-    raw_imgs = {name: rng.integers(0, 256, size=(img_h, img_w, 3), dtype=np.uint8) for name in st["cam_names"]}
+    raw_imgs = {
+        name: rng.integers(0, 256, size=(img_h, img_w, 3), dtype=np.uint8) for name in st["cam_names"]
+    }
     state_deg = np.array([5.0, -10.0, 15.0, -5.0, 30.0, 50.0], dtype=np.float32)[:state_dim]
 
     # images: (x/255 - mean)/std, HWC->CHW, stacked in model cam order
