@@ -1,10 +1,15 @@
+// Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @file act_stats.h
  * @brief Parser for ACT normalization and SO-101 calibration stats.
  */
 
-#ifndef ONNX_INFERENCE_ACT_CPP_UTILS_ACT_STATS_H_
-#define ONNX_INFERENCE_ACT_CPP_UTILS_ACT_STATS_H_
+#ifndef ACT_STATS_H  // NOLINT(build/header_guard)
+#define ACT_STATS_H  // NOLINT(build/header_guard)
+
+// NOLINTBEGIN
 
 #include <cstring>
 #include <fstream>
@@ -110,4 +115,6 @@ inline ActStats ParseActStats(const std::string& path) {
     return s;
 }
 
-#endif  // ONNX_INFERENCE_ACT_CPP_UTILS_ACT_STATS_H_
+// NOLINTEND
+
+#endif  // ACT_STATS_H

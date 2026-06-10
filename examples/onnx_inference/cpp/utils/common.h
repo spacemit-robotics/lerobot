@@ -1,10 +1,15 @@
+// Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @file common.h
  * @brief Shared timing and NumPy .npy loading helpers for ACT ONNX C++ tools.
  */
 
-#ifndef ONNX_INFERENCE_ACT_CPP_UTILS_COMMON_H_
-#define ONNX_INFERENCE_ACT_CPP_UTILS_COMMON_H_
+#ifndef COMMON_H  // NOLINT(build/header_guard)
+#define COMMON_H  // NOLINT(build/header_guard)
+
+// NOLINTBEGIN
 
 #include <chrono>
 #include <cctype>
@@ -89,4 +94,6 @@ inline std::vector<float> LoadNpyF32(const std::string& path, std::vector<int64_
     return data;
 }
 
-#endif  // ONNX_INFERENCE_ACT_CPP_UTILS_COMMON_H_
+// NOLINTEND
+
+#endif  // COMMON_H

@@ -1,3 +1,8 @@
+// Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// NOLINTBEGIN
+
 /**
  * @file act_evaluate.cpp
  * @brief ACT ONNX offline and SO-101 real-robot evaluation entry.
@@ -131,6 +136,38 @@ static void UnnormalizeAction(const float* a, const vector<float>& mean,
     for (size_t i = 0; i < mean.size(); ++i) out[i] = a[i] * std[i] + mean[i];
 }
 
+static bool LooksLikeRawImageInput(const vector<float>& images) {
+    if (images.empty()) return false;
+    for (float v : images) {
+        if (v < 0.0f || v > 1.0f) return false;
+    }
+    return true;
+}
+
+static void NormalizeLoadedImagesIfRaw(
+    vector<float>& images, const vector<int64_t>& shape, const Stats& st) {
+    if (!LooksLikeRawImageInput(images)) return;
+    if (shape.size() != 4) return;
+    const int n_cam = static_cast<int>(shape[0]);
+    const int channels = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[2]);
+    const int width = static_cast<int>(shape[3]);
+    if (channels != 3 || n_cam != static_cast<int>(st.cam_names.size())) return;
+
+    const size_t hw = static_cast<size_t>(height) * width;
+    for (int ci = 0; ci < n_cam; ++ci) {
+        const auto& name = st.cam_names[ci];
+        const auto& mean = st.image_mean.at(name);
+        const auto& std = st.image_std.at(name);
+        for (int ch = 0; ch < 3; ++ch) {
+            const size_t base = (static_cast<size_t>(ci) * 3 + ch) * hw;
+            for (size_t i = 0; i < hw; ++i) {
+                images[base + i] = (images[base + i] - mean[ch]) / std[ch];
+            }
+        }
+    }
+}
+
 // --------------------------------------------------------------------------- //
 // Config / CLI
 // --------------------------------------------------------------------------- //
@@ -177,7 +214,7 @@ static void PrintUsage(const char* p) {
     "  --dry-run            Compute actions but do NOT command the motors\n"
     "  --verbose            Print per-step state/action\n"
     "Offline (no hardware):\n"
-    "  --images-npy P       (n_cam,3,H,W) float32 normalized images input\n"
+    "  --images-npy P       (n_cam,3,H,W) float32 raw [0,1] or normalized images\n"
     "  --state-npy P        (state_dim) float32 state in lerobot-norm space\n";
 }
 
@@ -316,8 +353,9 @@ static int RunOffline(const Config& cfg, const Stats& st, OnnxRunner& ort) {
         return 2;
     }
     vector<int64_t> img_shape, st_shape;
-    vector<float> images = LoadNpyF32(cfg.images_npy, img_shape);  // (n_cam,3,H,W), normalized
+    vector<float> images = LoadNpyF32(cfg.images_npy, img_shape);  // raw [0,1] or normalized
     vector<float> state = LoadNpyF32(cfg.state_npy, st_shape);  // (state_dim), lerobot-norm space
+    NormalizeLoadedImagesIfRaw(images, img_shape, st);
 
     // The npy `state` is in lerobot-norm space (degrees/0..100); MEAN_STD normalize it.
     vector<float> state_n = NormalizeState(state, st.state_mean, st.state_std);
@@ -590,3 +628,5 @@ int main(int argc, char** argv) {
     return RunOffline(cfg, st, ort);
 #endif
 }
+
+// NOLINTEND

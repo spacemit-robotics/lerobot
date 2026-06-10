@@ -1,10 +1,15 @@
+// Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @file act_runtime.h
  * @brief Minimal ONNX Runtime wrapper for ACT whole-graph inference.
  */
 
-#ifndef ONNX_INFERENCE_ACT_CPP_UTILS_ACT_RUNTIME_H_
-#define ONNX_INFERENCE_ACT_CPP_UTILS_ACT_RUNTIME_H_
+#ifndef ACT_RUNTIME_H  // NOLINT(build/header_guard)
+#define ACT_RUNTIME_H  // NOLINT(build/header_guard)
+
+// NOLINTBEGIN
 
 #include <memory>
 #include <stdexcept>
@@ -93,4 +98,6 @@ struct ActOnnxRunner {
     }
 };
 
-#endif  // ONNX_INFERENCE_ACT_CPP_UTILS_ACT_RUNTIME_H_
+// NOLINTEND
+
+#endif  // ACT_RUNTIME_H

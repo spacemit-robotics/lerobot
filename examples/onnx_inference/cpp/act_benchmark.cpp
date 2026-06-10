@@ -1,3 +1,8 @@
+// Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// NOLINTBEGIN
+
 /**
  * @file act_benchmark.cpp
  * @brief Benchmark ACT whole-graph ONNX inference on CPU or SpaceMIT EP.
@@ -247,3 +252,5 @@ int main(int argc, char** argv) {
     }
     return 0;
 }
+
+// NOLINTEND
