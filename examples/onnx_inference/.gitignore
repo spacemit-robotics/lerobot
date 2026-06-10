@@ -1,0 +1,19 @@
+# Large / regenerable artifacts — do NOT commit
+# vendored riscv64 ORT SDK (~242M)
+cpp/spacemit-ort.riscv64.*/
+# ONNX + PyTorch weights (GBs)
+models/
+# CMake build dirs
+build/
+build_hw/
+cpp/build/
+cpp/build_*/
+__pycache__/
+*.pyc
+
+# Test artifacts (regenerable via tools/make_act_test_inputs.py)
+cpp/inputs/*.npy
+ref_*.npy
+
+# NOTE: models/ is ignored above, so the small act_norm_stats.txt (single source
+# of truth for the C++ twin) must be force-added: git add -f .../act_norm_stats.txt

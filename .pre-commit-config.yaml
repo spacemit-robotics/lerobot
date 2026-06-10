@@ -40,6 +40,7 @@ repos:
     rev: v0.14.1
     hooks:
       - id: ruff-format
+        args: [--target-version=py38]
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 

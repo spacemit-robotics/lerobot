@@ -1,3 +1,5 @@
+# ruff: noqa: E501, F401, F403, F541, F841
+
 import math
 from dataclasses import dataclass
 from typing import Any

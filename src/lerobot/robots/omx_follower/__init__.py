@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2025 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2026 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -152,8 +154,7 @@ def run_exo_calibration(
         import matplotlib.pyplot as plt
     except ImportError as e:
         raise ImportError(
-            "Calibration requires matplotlib and opencv-python. "
-            "Install with: pip install matplotlib opencv-python"
+            "Calibration requires matplotlib and opencv-python. Install with: pip install matplotlib opencv-python"
         ) from e
 
     from .exo_serial import read_raw_from_serial

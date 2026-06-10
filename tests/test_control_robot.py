@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501
+
 # Copyright 2025 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,10 +72,9 @@ def test_record_and_resume(tmp_path):
 
     cfg.resume = True
     # Mock the revision to prevent Hub calls during resume
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "record")
         dataset = record(cfg)
@@ -114,10 +115,9 @@ def test_record_and_replay(tmp_path):
     record(record_cfg)
 
     # Mock the revision to prevent Hub calls during replay
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "record_and_replay")
         replay(replay_cfg)

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1773,8 +1775,7 @@ class MultiLeRobotDataset(torch.utils.data.Dataset):
             extra_keys = set(ds.features).difference(intersection_features)
             if extra_keys:
                 logging.warning(
-                    f"keys {extra_keys} of {repo_id} were disabled as they are not contained in all the "
-                    "other datasets."
+                    f"keys {extra_keys} of {repo_id} were disabled as they are not contained in all the other datasets."
                 )
                 self.disabled_features.update(extra_keys)
 

@@ -131,8 +131,7 @@ class PolicyServer(services_pb2_grpc.AsyncInferenceServicer):
 
         if policy_specs.policy_type not in SUPPORTED_POLICIES:
             raise ValueError(
-                f"Policy type {policy_specs.policy_type} not supported. "
-                f"Supported policies: {SUPPORTED_POLICIES}"
+                f"Policy type {policy_specs.policy_type} not supported. Supported policies: {SUPPORTED_POLICIES}"
             )
 
         self.logger.info(

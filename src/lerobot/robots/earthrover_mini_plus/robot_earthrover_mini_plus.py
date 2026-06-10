@@ -117,8 +117,7 @@ class EarthRoverMiniPlus(Robot):
             response = requests.get(f"{self.sdk_base_url}/data", timeout=10.0)
             if response.status_code != 200:
                 raise DeviceNotConnectedError(
-                    f"Cannot connect to SDK at {self.sdk_base_url}. "
-                    "Make sure it's running: hypercorn main:app --reload"
+                    f"Cannot connect to SDK at {self.sdk_base_url}. Make sure it's running: hypercorn main:app --reload"
                 )
         except requests.RequestException as e:
             raise DeviceNotConnectedError(f"Cannot connect to SDK at {self.sdk_base_url}: {e}") from e

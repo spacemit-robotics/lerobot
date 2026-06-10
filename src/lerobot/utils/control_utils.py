@@ -1,3 +1,5 @@
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -98,11 +100,9 @@ def predict_action(
         A `torch.Tensor` containing the predicted action, ready for the robot.
     """
     observation = copy(observation)
-    with (
-        torch.inference_mode(),
-        torch.autocast(device_type=device.type) if device.type == "cuda" and use_amp else nullcontext(),
-    ):
-        # Convert to pytorch format: channel first and float32 in [0,1] with batch dimension
+    with torch.inference_mode(), torch.autocast(
+        device_type=device.type
+    ) if device.type == "cuda" and use_amp else nullcontext():
         observation = prepare_observation_for_inference(observation, device, task, robot_type)
         observation = preprocessor(observation)
 

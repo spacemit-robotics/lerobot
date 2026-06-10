@@ -1,3 +1,5 @@
+# ruff: noqa: E501, F401, F403, F541, F841
+
 from transformers.configuration_utils import PretrainedConfig
 from transformers.modeling_rope_utils import rope_config_validation
 

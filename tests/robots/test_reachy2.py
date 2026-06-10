@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501
+
 # Copyright 2025 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -148,15 +150,12 @@ def _make_reachy2_camera_mock(*args, **kwargs):
 
 @pytest.fixture(params=PARAMS, ids=lambda p: "default" if not p else ",".join(p.keys()))
 def reachy2(request):
-    with (
-        patch(
-            "lerobot.robots.reachy2.robot_reachy2.ReachySDK",
-            side_effect=lambda *a, **k: _make_reachy2_sdk_mock(),
-        ),
-        patch(
-            "lerobot.cameras.reachy2_camera.reachy2_camera.Reachy2Camera",
-            side_effect=_make_reachy2_camera_mock,
-        ),
+    with patch(
+        "lerobot.robots.reachy2.robot_reachy2.ReachySDK",
+        side_effect=lambda *a, **k: _make_reachy2_sdk_mock(),
+    ), patch(
+        "lerobot.cameras.reachy2_camera.reachy2_camera.Reachy2Camera",
+        side_effect=_make_reachy2_camera_mock,
     ):
         overrides = request.param
         cfg = Reachy2RobotConfig(ip_address="192.168.0.200", **overrides)

@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -328,10 +330,9 @@ def test_exception_handling(tmp_path, img_array_factory):
     writer = AsyncImageWriter()
     try:
         image_array = img_array_factory()
-        with (
-            patch.object(writer.queue, "put", side_effect=queue.Full("Queue is full")),
-            pytest.raises(queue.Full) as exc_info,
-        ):
+        with patch.object(writer.queue, "put", side_effect=queue.Full("Queue is full")), pytest.raises(
+            queue.Full
+        ) as exc_info:
             writer.save_image(image_array, tmp_path / "test.png")
         assert str(exc_info.value) == "Queue is full"
     finally:

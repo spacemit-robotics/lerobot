@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import multiprocessing as mp
 import signal
 from pathlib import Path

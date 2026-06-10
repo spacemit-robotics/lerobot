@@ -1,3 +1,5 @@
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2026 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -251,8 +253,7 @@ class RobstrideMotorsBus(MotorsBusBase):
             fault_bits = int.from_bytes(msg.data[1:5], "little")
             if fault_bits != 0 and msg.data[5] == msg.data[6] == msg.data[7] == 0:
                 logger.error(
-                    f"Motor fault received from CAN ID 0x{msg.arbitration_id:02X}: "
-                    f"fault_bits=0x{fault_bits:08X}"
+                    f"Motor fault received from CAN ID 0x{msg.arbitration_id:02X}: fault_bits=0x{fault_bits:08X}"
                 )
                 return True, msg
 

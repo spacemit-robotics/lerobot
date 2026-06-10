@@ -446,8 +446,7 @@ def make_policy(
     # slower than running natively on MPS.
     if cfg.type == "vqbet" and cfg.device == "mps":
         raise NotImplementedError(
-            "Current implementation of VQBeT does not support `mps` backend. "
-            "Please use `cpu` or `cuda` backend."
+            "Current implementation of VQBeT does not support `mps` backend. Please use `cpu` or `cuda` backend."
         )
 
     policy_cls = get_policy_class(cfg.type)

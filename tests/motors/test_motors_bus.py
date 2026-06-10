@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501
+
 # Copyright 2025 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -123,11 +125,11 @@ def test_read(data_name, id_, value, dummy_motors):
     bus.connect(handshake=False)
     addr, length = DUMMY_CTRL_TABLE_2[data_name]
 
-    with (
-        patch.object(MockMotorsBus, "_read", return_value=(value, 0, 0)) as mock__read,
-        patch.object(MockMotorsBus, "_decode_sign", return_value={id_: value}) as mock__decode_sign,
-        patch.object(MockMotorsBus, "_normalize", return_value={id_: value}) as mock__normalize,
-    ):
+    with patch.object(MockMotorsBus, "_read", return_value=(value, 0, 0)) as mock__read, patch.object(
+        MockMotorsBus, "_decode_sign", return_value={id_: value}
+    ) as mock__decode_sign, patch.object(
+        MockMotorsBus, "_normalize", return_value={id_: value}
+    ) as mock__normalize:
         returned_value = bus.read(data_name, f"dummy_{id_}")
 
     assert returned_value == value
@@ -157,11 +159,11 @@ def test_write(data_name, id_, value, dummy_motors):
     bus.connect(handshake=False)
     addr, length = DUMMY_CTRL_TABLE_2[data_name]
 
-    with (
-        patch.object(MockMotorsBus, "_write", return_value=(0, 0)) as mock__write,
-        patch.object(MockMotorsBus, "_encode_sign", return_value={id_: value}) as mock__encode_sign,
-        patch.object(MockMotorsBus, "_unnormalize", return_value={id_: value}) as mock__unnormalize,
-    ):
+    with patch.object(MockMotorsBus, "_write", return_value=(0, 0)) as mock__write, patch.object(
+        MockMotorsBus, "_encode_sign", return_value={id_: value}
+    ) as mock__encode_sign, patch.object(
+        MockMotorsBus, "_unnormalize", return_value={id_: value}
+    ) as mock__unnormalize:
         bus.write(data_name, f"dummy_{id_}", value)
 
     mock__write.assert_called_once_with(
@@ -194,11 +196,13 @@ def test_sync_read_by_str(data_name, id_, value, dummy_motors):
     ids = [id_]
     expected_value = {f"dummy_{id_}": value}
 
-    with (
-        patch.object(MockMotorsBus, "_sync_read", return_value=({id_: value}, 0)) as mock__sync_read,
-        patch.object(MockMotorsBus, "_decode_sign", return_value={id_: value}) as mock__decode_sign,
-        patch.object(MockMotorsBus, "_normalize", return_value={id_: value}) as mock__normalize,
-    ):
+    with patch.object(
+        MockMotorsBus, "_sync_read", return_value=({id_: value}, 0)
+    ) as mock__sync_read, patch.object(
+        MockMotorsBus, "_decode_sign", return_value={id_: value}
+    ) as mock__decode_sign, patch.object(
+        MockMotorsBus, "_normalize", return_value={id_: value}
+    ) as mock__normalize:
         returned_dict = bus.sync_read(data_name, f"dummy_{id_}")
 
     assert returned_dict == expected_value
@@ -231,11 +235,13 @@ def test_sync_read_by_list(data_name, ids_values, dummy_motors):
     ids = list(ids_values)
     expected_values = {f"dummy_{id_}": val for id_, val in ids_values.items()}
 
-    with (
-        patch.object(MockMotorsBus, "_sync_read", return_value=(ids_values, 0)) as mock__sync_read,
-        patch.object(MockMotorsBus, "_decode_sign", return_value=ids_values) as mock__decode_sign,
-        patch.object(MockMotorsBus, "_normalize", return_value=ids_values) as mock__normalize,
-    ):
+    with patch.object(
+        MockMotorsBus, "_sync_read", return_value=(ids_values, 0)
+    ) as mock__sync_read, patch.object(
+        MockMotorsBus, "_decode_sign", return_value=ids_values
+    ) as mock__decode_sign, patch.object(
+        MockMotorsBus, "_normalize", return_value=ids_values
+    ) as mock__normalize:
         returned_dict = bus.sync_read(data_name, [f"dummy_{id_}" for id_ in ids])
 
     assert returned_dict == expected_values
@@ -268,11 +274,13 @@ def test_sync_read_by_none(data_name, ids_values, dummy_motors):
     ids = list(ids_values)
     expected_values = {f"dummy_{id_}": val for id_, val in ids_values.items()}
 
-    with (
-        patch.object(MockMotorsBus, "_sync_read", return_value=(ids_values, 0)) as mock__sync_read,
-        patch.object(MockMotorsBus, "_decode_sign", return_value=ids_values) as mock__decode_sign,
-        patch.object(MockMotorsBus, "_normalize", return_value=ids_values) as mock__normalize,
-    ):
+    with patch.object(
+        MockMotorsBus, "_sync_read", return_value=(ids_values, 0)
+    ) as mock__sync_read, patch.object(
+        MockMotorsBus, "_decode_sign", return_value=ids_values
+    ) as mock__decode_sign, patch.object(
+        MockMotorsBus, "_normalize", return_value=ids_values
+    ) as mock__normalize:
         returned_dict = bus.sync_read(data_name)
 
     assert returned_dict == expected_values
@@ -303,11 +311,13 @@ def test_sync_write_by_single_value(data_name, value, dummy_motors):
     addr, length = DUMMY_CTRL_TABLE_2[data_name]
     ids_values = {m.id: value for m in dummy_motors.values()}
 
-    with (
-        patch.object(MockMotorsBus, "_sync_write", return_value=(ids_values, 0)) as mock__sync_write,
-        patch.object(MockMotorsBus, "_encode_sign", return_value=ids_values) as mock__encode_sign,
-        patch.object(MockMotorsBus, "_unnormalize", return_value=ids_values) as mock__unnormalize,
-    ):
+    with patch.object(
+        MockMotorsBus, "_sync_write", return_value=(ids_values, 0)
+    ) as mock__sync_write, patch.object(
+        MockMotorsBus, "_encode_sign", return_value=ids_values
+    ) as mock__encode_sign, patch.object(
+        MockMotorsBus, "_unnormalize", return_value=ids_values
+    ) as mock__unnormalize:
         bus.sync_write(data_name, value)
 
     mock__sync_write.assert_called_once_with(
@@ -338,11 +348,13 @@ def test_sync_write_by_value_dict(data_name, ids_values, dummy_motors):
     addr, length = DUMMY_CTRL_TABLE_2[data_name]
     values = {f"dummy_{id_}": val for id_, val in ids_values.items()}
 
-    with (
-        patch.object(MockMotorsBus, "_sync_write", return_value=(ids_values, 0)) as mock__sync_write,
-        patch.object(MockMotorsBus, "_encode_sign", return_value=ids_values) as mock__encode_sign,
-        patch.object(MockMotorsBus, "_unnormalize", return_value=ids_values) as mock__unnormalize,
-    ):
+    with patch.object(
+        MockMotorsBus, "_sync_write", return_value=(ids_values, 0)
+    ) as mock__sync_write, patch.object(
+        MockMotorsBus, "_encode_sign", return_value=ids_values
+    ) as mock__encode_sign, patch.object(
+        MockMotorsBus, "_unnormalize", return_value=ids_values
+    ) as mock__unnormalize:
         bus.sync_write(data_name, values)
 
     mock__sync_write.assert_called_once_with(

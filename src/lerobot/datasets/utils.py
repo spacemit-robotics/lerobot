@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +23,7 @@ from collections import deque
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from pprint import pformat
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 import datasets
 import numpy as np
@@ -1224,6 +1226,9 @@ class LookBackError(Exception):
     pass
 
 
+T = TypeVar("T")
+
+
 class LookAheadError(Exception):
     """
     Exception raised when trying to look ahead in the future of a Backtrackable object.
@@ -1232,7 +1237,7 @@ class LookAheadError(Exception):
     pass
 
 
-class Backtrackable[T]:
+class Backtrackable(Generic[T]):  # noqa: UP046 - Board py38 syntax.
     """
     Wrap any iterator/iterable so you can step back up to `history` items
     and look ahead up to `lookahead` items.

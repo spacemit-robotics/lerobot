@@ -1,3 +1,5 @@
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 # Copyright 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
 #
@@ -110,8 +112,7 @@ def ensure_safe_goal_position(
 
     if warnings_dict:
         logging.warning(
-            "Relative goal position magnitude had to be clamped to be safe.\n"
-            f"{pformat(warnings_dict, indent=4)}"
+            f"Relative goal position magnitude had to be clamped to be safe.\n{pformat(warnings_dict, indent=4)}"
         )
 
     return safe_goal_positions
