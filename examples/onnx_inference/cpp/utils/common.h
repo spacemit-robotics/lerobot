@@ -21,9 +21,9 @@ struct Timer {
 
     double ElapsedMs() const {
         return std::chrono::duration_cast<std::chrono::microseconds>(
-                   std::chrono::high_resolution_clock::now() - t0)
-                   .count() /
-               1000.0;
+            std::chrono::high_resolution_clock::now() - t0)
+            .count() /
+            1000.0;
     }
 };
 
@@ -65,6 +65,8 @@ inline std::vector<float> LoadNpyF32(const std::string& path, std::vector<int64_
     shape.clear();
     size_t sp = header.find("(", header.find("shape"));
     size_t ep = header.find(")", sp);
+    if (sp == std::string::npos || ep == std::string::npos || ep <= sp + 1)
+        throw std::runtime_error("npy shape must have at least one dimension: " + path);
     std::string dims = header.substr(sp + 1, ep - sp - 1);
     size_t total = 1;
     for (size_t i = 0; i < dims.size();) {

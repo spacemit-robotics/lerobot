@@ -91,7 +91,7 @@ def _load_safetensors_np(path: Path) -> dict[str, np.ndarray]:
 
     out: dict[str, np.ndarray] = {}
     with safe_open(str(path), framework="np") as sf:
-        for k in sf:
+        for k in sf.keys():  # noqa: SIM118 - safe_open is not directly iterable.
             out[k] = sf.get_tensor(k)
     return out
 

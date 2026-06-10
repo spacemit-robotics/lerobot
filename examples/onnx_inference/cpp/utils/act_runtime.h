@@ -84,7 +84,7 @@ struct ActOnnxRunner {
         for (auto& s : in_names) in_ptr.push_back(s.c_str());
         for (auto& s : out_names) out_ptr.push_back(s.c_str());
         auto outs = session->Run(Ort::RunOptions{nullptr}, in_ptr.data(), ins.data(),
-                                 ins.size(), out_ptr.data(), out_ptr.size());
+            ins.size(), out_ptr.data(), out_ptr.size());
         auto shp = outs[0].GetTensorTypeAndShapeInfo().GetShape();
         chunk = static_cast<int>(shp[1]);
         adim = static_cast<int>(shp[2]);

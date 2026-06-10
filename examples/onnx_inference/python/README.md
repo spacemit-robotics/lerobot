@@ -29,8 +29,8 @@ pip install torchvision==0.22.0
 pip install pyarrow==23.0.0
 pip install "lerobot[feetech]"
 
-# 安装 spacemit onnxruntime
-pip install spacemit_ort safetensors
+# 安装 onnxruntime / spacemit onnxruntime
+pip install onnxruntime spacemit_ort safetensors
 ```
 
 ## 前置准备

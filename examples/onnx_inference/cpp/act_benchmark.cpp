@@ -45,19 +45,19 @@ struct Config {
 
 static void PrintUsage(const char* prog) {
     cout << "Usage: " << prog << " <model.onnx> [options]\n"
-         << "  -s, --spacemit        Enable SpaceMIT EP (default CPU)\n"
-         << "  -t, --threads N       Intra/EP thread count (default 4)\n"
-         << "  -a, --affinity \"8;9\"  SpaceMIT EP core affinity\n"
-         << "  -n, --iters N         Benchmark iterations (default 20)\n"
-         << "  -w, --warmup N        Warmup iterations (default 3)\n"
-         << "      --seed N          Input RNG seed (default 0)\n"
-         << "      --cams N          Camera count (default 2)\n"
-         << "      --height H        Image height (default 480)\n"
-         << "      --width W         Image width (default 640)\n"
-         << "      --state-dim N     State dim, 0 disables (default 6)\n"
-         << "      --images-npy P    Load images input from .npy\n"
-         << "      --state-npy P     Load state input from .npy\n"
-         << "      --ref-npy P       Reference actions .npy for diff check\n";
+        << "  -s, --spacemit        Enable SpaceMIT EP (default CPU)\n"
+        << "  -t, --threads N       Intra/EP thread count (default 4)\n"
+        << "  -a, --affinity \"8;9\"  SpaceMIT EP core affinity\n"
+        << "  -n, --iters N         Benchmark iterations (default 20)\n"
+        << "  -w, --warmup N        Warmup iterations (default 3)\n"
+        << "      --seed N          Input RNG seed (default 0)\n"
+        << "      --cams N          Camera count (default 2)\n"
+        << "      --height H        Image height (default 480)\n"
+        << "      --width W         Image width (default 640)\n"
+        << "      --state-dim N     State dim, 0 disables (default 6)\n"
+        << "      --images-npy P    Load images input from .npy\n"
+        << "      --state-npy P     Load state input from .npy\n"
+        << "      --ref-npy P       Reference actions .npy for diff check\n";
 }
 
 static bool ParseArgs(int argc, char** argv, Config& c) {
@@ -105,8 +105,8 @@ int main(int argc, char** argv) {
     if (!ParseArgs(argc, argv, cfg)) return 1;
 
     cout << "[act] model=" << cfg.model_path
-         << " provider=" << (cfg.use_ep ? "SpaceMIT EP" : "CPU")
-         << " threads=" << cfg.threads;
+        << " provider=" << (cfg.use_ep ? "SpaceMIT EP" : "CPU")
+        << " threads=" << cfg.threads;
     if (cfg.use_ep && !cfg.affinity.empty()) cout << " affinity=" << cfg.affinity;
     cout << endl;
 
@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < cfg.warmup; i++) {
         auto feed = make_feed();
         last_out = runner.session->Run(Ort::RunOptions{nullptr}, in_ptrs.data(),
-                           feed.data(), feed.size(), out_ptrs.data(), out_ptrs.size());
+            feed.data(), feed.size(), out_ptrs.data(), out_ptrs.size());
     }
 
     // ---- Benchmark ---------------------------------------------------------
@@ -205,7 +205,7 @@ int main(int argc, char** argv) {
         auto feed = make_feed();
         t.Start();
         last_out = runner.session->Run(Ort::RunOptions{nullptr}, in_ptrs.data(),
-                           feed.data(), feed.size(), out_ptrs.data(), out_ptrs.size());
+            feed.data(), feed.size(), out_ptrs.data(), out_ptrs.size());
         times.push_back(t.ElapsedMs());
     }
 
@@ -221,8 +221,8 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < oshape.size(); i++) cout << (i ? "," : "") << oshape[i];
     cout << "]" << endl;
     cout << "[act] latency mean=" << mean << "ms median=" << median
-         << "ms min=" << mn << "ms max=" << mx
-         << " (iters=" << cfg.iters << ", warmup=" << cfg.warmup << ")" << endl;
+        << "ms min=" << mn << "ms max=" << mx
+        << " (iters=" << cfg.iters << ", warmup=" << cfg.warmup << ")" << endl;
 
     // ---- Optional reference diff ------------------------------------------
     if (!cfg.ref_npy.empty()) {
@@ -241,8 +241,8 @@ int main(int argc, char** argv) {
                 max_rel = max(max_rel, d / den);
             }
             cout << "[act] diff vs ref: max|abs|=" << max_abs
-                 << " max|rel|=" << max_rel
-                 << (max_abs < 1e-3 ? "  OK" : "  CHECK") << endl;
+                << " max|rel|=" << max_rel
+                << (max_abs < 1e-3 ? "  OK" : "  CHECK") << endl;
         }
     }
     return 0;

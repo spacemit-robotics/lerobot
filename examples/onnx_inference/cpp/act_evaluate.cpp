@@ -107,8 +107,8 @@ static int NormToRaw(const MotorCalib& c, double val, bool clamp_to_range) {
 // --------------------------------------------------------------------------- //
 // img_rgb_hwc: H*W*3 float in [0,1]; writes CHW normalized into out (offset by base).
 static void NormalizeImageInto(const vector<float>& img_rgb_hwc, int H, int W,
-                                  const vector<float>& mean, const vector<float>& std,
-                                  vector<float>& out, size_t base) {
+    const vector<float>& mean, const vector<float>& std,
+    vector<float>& out, size_t base) {
     const size_t HW = size_t(H) * W;
     for (int ch = 0; ch < 3; ++ch) {
         float m = mean[ch], sd = std[ch];
@@ -120,14 +120,14 @@ static void NormalizeImageInto(const vector<float>& img_rgb_hwc, int H, int W,
 }
 
 static vector<float> NormalizeState(const vector<float>& state,
-                                     const vector<float>& mean, const vector<float>& std) {
+    const vector<float>& mean, const vector<float>& std) {
     vector<float> out(state.size());
     for (size_t i = 0; i < state.size(); ++i) out[i] = (state[i] - mean[i]) / std[i];
     return out;
 }
 
 static void UnnormalizeAction(const float* a, const vector<float>& mean,
-                               const vector<float>& std, vector<float>& out) {
+    const vector<float>& std, vector<float>& out) {
     for (size_t i = 0; i < mean.size(); ++i) out[i] = a[i] * std[i] + mean[i];
 }
 
@@ -289,7 +289,7 @@ struct OnnxRunner {
         for (auto& s : in_names) in_ptr.push_back(s.c_str());
         for (auto& s : out_names) out_ptr.push_back(s.c_str());
         auto outs = session->Run(Ort::RunOptions{nullptr}, in_ptr.data(), ins.data(),
-                                 ins.size(), out_ptr.data(), out_ptr.size());
+            ins.size(), out_ptr.data(), out_ptr.size());
         auto shp = outs[0].GetTensorTypeAndShapeInfo().GetShape();  // (1, chunk, adim)
         chunk = (int)shp[1];
         adim = (int)shp[2];
@@ -344,7 +344,7 @@ static int RunOffline(const Config& cfg, const Stats& st, OnnxRunner& ort) {
         cout << "[offline] action[0] -> raw step: ";
         for (int i = 0; i < adim; ++i)
             cout << NormToRaw(st.calib[i], a0[i], !cfg.no_clamp)
-                 << (i + 1 < adim ? ", " : "\n");
+                << (i + 1 < adim ? ", " : "\n");
     }
     return 0;
 }
@@ -387,20 +387,22 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
     vector<struct motor_dev*> motors(S, nullptr);
     for (int i = 0; i < S; ++i) {
         motors[i] = motor_alloc_uart("drv_uart_feetech", cfg.port.c_str(), cfg.baud,
-                                     (uint8_t)st.calib[i].id, nullptr);
+            (uint8_t)st.calib[i].id, nullptr);
         if (!motors[i]) {
             cerr << "motor_alloc failed: " << st.motor_order[i] << "\n";
+            motor_free(motors.data(), (uint32_t)i);
             return 2;
         }
     }
     if (motor_init(motors.data(), S) != 0) {
         cerr << "motor_init failed\n";
+        motor_free(motors.data(), S);
         return 2;
     }
     cout << "[robot] " << S << " motors on " << cfg.port << " @ " << cfg.baud << "\n";
 
     const int n_steps = std::min(cfg.n_action_steps > 0 ? cfg.n_action_steps : st.n_action_steps,
-                                 st.chunk_size);
+        st.chunk_size);
 
     // Buffers reused each loop.
     vector<float> images(size_t(n_cam) * 3 * H * W);
@@ -416,11 +418,11 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
     auto t_start = steady_clock::now();
     int step = 0;
     cout << "[robot] start: fps=" << cfg.fps << " n_action_steps=" << n_steps
-         << " chunk=" << st.chunk_size << (cfg.dry_run ? " (DRY-RUN)\n" : "\n");
+        << " chunk=" << st.chunk_size << (cfg.dry_run ? " (DRY-RUN)\n" : "\n");
 
     while (!g_stop &&
-           duration_cast<duration<double>>(steady_clock::now() - t_start).count() <
-               cfg.episode_time) {
+        duration_cast<duration<double>>(steady_clock::now() - t_start).count() <
+        cfg.episode_time) {
         auto loop_t0 = steady_clock::now();
 
         // ---- Read motors -> raw step -> lerobot-norm -> MEAN_STD ----
@@ -450,7 +452,7 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
             for (size_t k = 0; k < size_t(H) * W * 3; ++k) img_rgb[k] = p[k] / 255.0f;
             const auto& name = st.cam_names[ci];
             NormalizeImageInto(img_rgb, H, W, st.image_mean.at(name), st.image_std.at(name),
-                                 images, size_t(ci) * 3 * H * W);
+                images, size_t(ci) * 3 * H * W);
         }
 
         // ---- Predict a chunk only when the queue is empty ----
@@ -518,8 +520,8 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
         double sum = 0;
         for (double x : v) sum += x;
         cout << "  " << tag << ": n=" << v.size() << " mean=" << sum / v.size()
-             << "ms median=" << v[v.size() / 2] << "ms min=" << v.front()
-             << "ms max=" << v.back() << "ms\n";
+            << "ms median=" << v[v.size() / 2] << "ms min=" << v.front()
+            << "ms max=" << v.back() << "ms\n";
     };
     cout << "[robot] done: " << step << " steps\n";
     report("inference(chunk)", infer_ms);
@@ -560,9 +562,9 @@ int main(int argc, char** argv) {
         return 1;
     }
     cout << "[act_evaluate] model=" << cfg.model_path
-         << " provider=" << (cfg.use_ep ? "SpaceMIT EP" : "CPU")
-         << " cams=" << st.cam_names.size() << " state_dim=" << st.state_dim
-         << " action_dim=" << st.action_dim << " chunk=" << st.chunk_size << "\n";
+        << " provider=" << (cfg.use_ep ? "SpaceMIT EP" : "CPU")
+        << " cams=" << st.cam_names.size() << " state_dim=" << st.state_dim
+        << " action_dim=" << st.action_dim << " chunk=" << st.chunk_size << "\n";
 
     OnnxRunner ort(cfg);
     cout << "[act_evaluate] ONNX inputs=";
