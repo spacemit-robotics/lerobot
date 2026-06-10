@@ -82,7 +82,10 @@ inline std::vector<float> LoadNpyF32(const std::string& path, std::vector<int64_
     if (shape.empty())
         throw std::runtime_error("npy shape must have at least one dimension: " + path);
     std::vector<float> data(total);
-    f.read(reinterpret_cast<char*>(data.data()), total * sizeof(float));
+    const std::streamsize expected_bytes = static_cast<std::streamsize>(total * sizeof(float));
+    f.read(reinterpret_cast<char*>(data.data()), expected_bytes);
+    if (f.gcount() != expected_bytes)
+        throw std::runtime_error("truncated npy data: " + path);
     return data;
 }
 

@@ -24,9 +24,7 @@ python -m venv ~/.lerobot-venv
 source ~/.lerobot-venv/bin/activate
 
 # 安装 python 依赖
-pip install torch==2.7.1
-pip install torchvision==0.22.0
-pip install pyarrow==23.0.0
+pip install torch torchvision pyarrow
 pip install "lerobot[feetech]"
 
 # 安装 onnxruntime / spacemit onnxruntime

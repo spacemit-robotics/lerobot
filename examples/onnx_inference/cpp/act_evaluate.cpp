@@ -404,6 +404,8 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
     }
     if (motor_init(motors.data(), S) != 0) {
         cerr << "motor_init failed\n";
+        // motor_free releases handles returned by motor_alloc_uart; the
+        // drv_uart_feetech free path does not require successful init.
         motor_free(motors.data(), (uint32_t)allocated_motors);
         release_cameras();
         return 2;
