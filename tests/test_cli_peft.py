@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import importlib
 import os
 from unittest.mock import MagicMock, patch

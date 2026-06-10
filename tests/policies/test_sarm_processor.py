@@ -109,7 +109,6 @@ class TestSARMEncodingProcessorStepEndToEnd:
             patch("lerobot.policies.sarm.processor_sarm.CLIPModel") as mock_model_cls,
             patch("lerobot.policies.sarm.processor_sarm.CLIPProcessor") as mock_processor_cls,
         ):
-            # Mock the CLIP model - return embeddings based on input batch size
             mock_model = MagicMock()
 
             def get_image_features_side_effect(**kwargs):
