@@ -183,7 +183,3 @@ tests/artifacts/cameras/*.bag
 *.xml
 *.part
 third_party/chassis/build/
-
-
-# onnx 模型
-*.onnx

@@ -126,10 +126,11 @@ def run_torch_reference(checkpoint: Path, inputs: dict[str, np.ndarray]) -> np.n
 
     # Prepend local lerobot/src so it takes priority over any pip-installed
     # version (which may have broken groot_n1.py @dataclass field ordering).
-    local_src = EXAMPLE_DIR.parents[1] / "src"
+    local_src = EXAMPLE_DIR.parents[2] / "src"
     if local_src.exists() and str(local_src) not in sys.path:
         sys.path.insert(0, str(local_src))
-    sys.path.insert(0, str(TOOLS_DIR))
+    if str(TOOLS_DIR) not in sys.path:
+        sys.path.insert(0, str(TOOLS_DIR))
     from act_pytorch_to_onnx import ACTInferenceModule  # noqa: E402
 
     from lerobot.policies.act.modeling_act import ACTPolicy  # noqa: E402

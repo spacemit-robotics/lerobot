@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -136,17 +138,16 @@ def save_first_episode(imgs_dir: Path, dataset: LeRobotDataset) -> None:
 def sample_timestamps(timestamps_mode: str, ep_num_images: int, fps: int) -> list[float]:
     # Start at 5 to allow for 2_frames_4_space and 6_frames
     idx = random.randint(5, ep_num_images - 1)
-    match timestamps_mode:
-        case "1_frame":
-            frame_indexes = [idx]
-        case "2_frames":
-            frame_indexes = [idx - 1, idx]
-        case "2_frames_4_space":
-            frame_indexes = [idx - 5, idx]
-        case "6_frames":
-            frame_indexes = [idx - i for i in range(6)][::-1]
-        case _:
-            raise ValueError(timestamps_mode)
+    if timestamps_mode == "1_frame":
+        frame_indexes = [idx]
+    elif timestamps_mode == "2_frames":
+        frame_indexes = [idx - 1, idx]
+    elif timestamps_mode == "2_frames_4_space":
+        frame_indexes = [idx - 5, idx]
+    elif timestamps_mode == "6_frames":
+        frame_indexes = [idx - i for i in range(6)][::-1]
+    else:
+        raise ValueError(timestamps_mode)
 
     return [idx / fps for idx in frame_indexes]
 

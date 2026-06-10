@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 # !/usr/bin/env python
 
 # Copyright 2025 The HuggingFace Inc. team. All rights reserved.

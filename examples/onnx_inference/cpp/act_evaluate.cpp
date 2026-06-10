@@ -63,6 +63,14 @@ static void InstallSignalHandlers() {
     sigaction(SIGTERM, &sa, nullptr);
 }
 
+static void IgnoreSignalHandlers() {
+    struct sigaction sa;
+    std::memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGINT, &sa, nullptr);
+    sigaction(SIGTERM, &sa, nullptr);
+}
+
 // --------------------------------------------------------------------------- //
 // Stats + calibration (parsed from act_norm_stats.txt)
 // --------------------------------------------------------------------------- //
@@ -552,9 +560,9 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
     if (g_stop) cout << "\n[robot] interrupted; releasing hardware...\n";
 
     // Always release hardware, whether the loop ended on time, on error, or on
-    // Ctrl+C. Idle the motors (drop torque) before freeing the bus, then release
-    // the cameras. A second Ctrl+C here only re-sets g_stop (handler is a no-op
-    // beyond that), so this teardown always runs to completion.
+    // Ctrl+C. Ignore further termination signals during teardown so a second
+    // Ctrl+C cannot interrupt motor idle/free or camera release.
+    IgnoreSignalHandlers();
     vector<struct motor_cmd> idle(S);
     for (auto& c : idle) c.mode = MOTOR_MODE_IDLE;
     motor_set_cmds(motors.data(), idle.data(), S);
