@@ -253,7 +253,7 @@ class ProcessorMigrationError(Exception):
 
 
 @dataclass
-class DataProcessorPipeline(Generic[TInput, TOutput], HubMixin):
+class DataProcessorPipeline(Generic[TInput, TOutput], HubMixin):  # noqa: UP046 - Board py38 syntax.
     """A sequential pipeline for processing data, integrated with the Hugging Face Hub.
 
     This class chains together multiple `ProcessorStep` instances to form a complete

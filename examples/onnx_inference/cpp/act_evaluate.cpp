@@ -628,9 +628,10 @@ int main(int argc, char** argv) {
     for (auto& n : ort.out_names) cout << n << " ";
     cout << "\n";
 
+    const bool use_offline_inputs = !cfg.images_npy.empty() || !cfg.state_npy.empty();
+    if (use_offline_inputs) return RunOffline(cfg, st, ort);
+
 #ifdef ACT_ROBOT_HW
-    if (!cfg.images_npy.empty() || !cfg.state_npy.empty())
-        return RunOffline(cfg, st, ort);
     return RunRobot(cfg, st, ort);
 #else
     return RunOffline(cfg, st, ort);

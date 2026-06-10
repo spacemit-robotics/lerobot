@@ -45,7 +45,13 @@ from torch import Tensor
 from lerobot.policies.pretrained import PreTrainedPolicy
 from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
 from lerobot.policies.utils import populate_queues
-from lerobot.utils.constants import ACTION, OBS_IMAGES, OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS, OBS_STATE
+from lerobot.utils.constants import (
+    ACTION,
+    OBS_IMAGES,
+    OBS_LANGUAGE_ATTENTION_MASK,
+    OBS_LANGUAGE_TOKENS,
+    OBS_STATE,
+)
 
 
 class ActionSelectKwargs(TypedDict, total=False):
@@ -65,7 +71,7 @@ def pad_vector(vector: Tensor, max_dim: int) -> Tensor:
 class SmolVLAONNXPolicy(PreTrainedPolicy):
     """
     ONNX-based SmolVLA policy for efficient inference.
-    
+
     This class loads the 9 ONNX model components exported from SmolVLA:
     - smolvlm_vision.onnx: Vision encoder
     - smolvlm_text.onnx: Text encoder
@@ -90,7 +96,7 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
     ):
         """
         Initialize ONNX-based SmolVLA policy.
-        
+
         Args:
             config: SmolVLA configuration
             onnx_model_dir: Directory containing the 9 ONNX model files
@@ -100,73 +106,71 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
         config.validate_features()
         self.config = config
         self.onnx_model_dir = Path(onnx_model_dir)
-        
+
         # Setup ONNX Runtime providers
         if use_spacemit_ep:
             try:
                 import spacemit_ort  # noqa: F401 - Required to register SpaceMITExecutionProvider
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "spacemit_ort package is required for SpaceMIT acceleration. "
                     "Install with: pip install --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple spacemit-ort"
-                )
-            self.providers = ['SpaceMITExecutionProvider', 'CPUExecutionProvider']
+                ) from err
+            self.providers = ["SpaceMITExecutionProvider", "CPUExecutionProvider"]
             print("[SmolVLA ONNX] Using SpaceMIT accelerated execution provider")
         else:
-            self.providers = ['CPUExecutionProvider']
+            self.providers = ["CPUExecutionProvider"]
             print("[SmolVLA ONNX] Using standard CPU execution provider")
-        
+
         # Load all ONNX models
         self._load_onnx_models()
         self.reset()
-        
+
         print(f"[SmolVLA ONNX] Loaded {len(self.sessions)} ONNX models from {onnx_model_dir}")
 
     def _load_onnx_models(self):
         """Load all 9 ONNX model components."""
         self.sessions = {}
-        
+
         model_files = {
-            'vision': 'smolvlm_vision.onnx',
-            'text': 'smolvlm_text.onnx',
-            'expert_prefill': 'smolvlm_expert_prefill.onnx',
-            'expert_decode': 'smolvlm_expert_decode.onnx',
-            'state_proj': 'state_projector.onnx',
-            'time_in_proj': 'time_in_projector.onnx',
-            'time_out_proj': 'time_out_projector.onnx',
-            'action_in_proj': 'action_in_projector.onnx',
-            'action_out_proj': 'action_out_projector.onnx',
+            "vision": "smolvlm_vision.onnx",
+            "text": "smolvlm_text.onnx",
+            "expert_prefill": "smolvlm_expert_prefill.onnx",
+            "expert_decode": "smolvlm_expert_decode.onnx",
+            "state_proj": "state_projector.onnx",
+            "time_in_proj": "time_in_projector.onnx",
+            "time_out_proj": "time_out_projector.onnx",
+            "action_in_proj": "action_in_projector.onnx",
+            "action_out_proj": "action_out_projector.onnx",
         }
-        
+
         # SpaceMIT EP has limited AI cores - only use it for the heaviest model (vision)
         # Other models either crash (expert_decode) or are too small to benefit
-        spacemit_compatible = {'vision'}
-        
+        spacemit_compatible = {"vision"}
+
         sess_options = ort.SessionOptions()
         sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        
+
         for key, filename in model_files.items():
             model_path = self.onnx_model_dir / filename
             if not model_path.exists():
                 raise FileNotFoundError(f"ONNX model not found: {model_path}")
-            
+
             # Only use SpaceMIT EP for compatible heavy models
-            if key in spacemit_compatible and 'SpaceMITExecutionProvider' in self.providers:
+            if key in spacemit_compatible and "SpaceMITExecutionProvider" in self.providers:
                 providers = self.providers
             else:
-                providers = ['CPUExecutionProvider']
-            
+                providers = ["CPUExecutionProvider"]
+
             try:
                 session = ort.InferenceSession(
-                    str(model_path),
-                    sess_options=sess_options,
-                    providers=providers
+                    str(model_path), sess_options=sess_options, providers=providers
                 )
                 self.sessions[key] = session
                 active = session.get_providers()
                 print(f"[SmolVLA ONNX] Loaded {filename} ({active[0]})")
             except Exception as e:
-                raise RuntimeError(f"Failed to load {filename}: {e}")
+                raise RuntimeError(f"Failed to load {filename}: {e}") from e
 
     def reset(self):
         """Reset the policy state (called when environment resets)."""
@@ -182,14 +186,14 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
     def prepare_images(self, batch: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         """
         Prepare images for vision encoder.
-        
+
         Returns:
             images: Tensor of shape (batch_size, num_images, 3, H, W)
             img_masks: Tensor of shape (batch_size, num_images)
         """
         images_list = []
         masks_list = []
-        
+
         for key in batch:
             if key.startswith(f"{OBS_IMAGES}."):
                 img = batch[key]
@@ -197,14 +201,14 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
                     img = img.unsqueeze(0)  # (1, C, H, W)
                 images_list.append(img)
                 masks_list.append(torch.ones(img.shape[0], dtype=torch.bool, device=img.device))
-        
+
         if not images_list:
             raise ValueError("No images found in batch")
-        
+
         # Stack images
         images = torch.stack(images_list, dim=1)  # (batch_size, num_images, C, H, W)
         img_masks = torch.stack(masks_list, dim=1)  # (batch_size, num_images)
-        
+
         return images, img_masks
 
     def prepare_state(self, batch: dict[str, Tensor]) -> Tensor:
@@ -226,26 +230,26 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
     def _run_onnx_session(self, session_key: str, inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Run an ONNX session with given inputs."""
         session = self.sessions[session_key]
-        
+
         # Get input names from session
         input_names = [inp.name for inp in session.get_inputs()]
-        
+
         # Prepare inputs in correct order
         onnx_inputs = {name: inputs[name] for name in input_names if name in inputs}
-        
+
         # Run inference
         outputs = session.run(None, onnx_inputs)
-        
+
         # Map outputs to names
         output_names = [out.name for out in session.get_outputs()]
-        return {name: output for name, output in zip(output_names, outputs)}
+        return dict(zip(output_names, outputs, strict=True))
 
     def _get_action_chunk(
         self, batch: dict[str, Tensor], noise: Tensor | None = None, **kwargs: Unpack[ActionSelectKwargs]
     ) -> Tensor:
         """
         Generate action chunk using ONNX models.
-        
+
         This orchestrates the full inference pipeline based on actual ONNX model interfaces:
         1. Vision encoding (per image)
         2. Text encoding
@@ -278,30 +282,32 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
             img = images[:, i, :, :, :]  # [batch, 3, H, W]
             # Resize to 512x512 if needed
             if img.shape[-2:] != (512, 512):
-                img = torch.nn.functional.interpolate(img, size=(512, 512), mode='bilinear', align_corners=False)
+                img = torch.nn.functional.interpolate(
+                    img, size=(512, 512), mode="bilinear", align_corners=False
+                )
             img_np = self._to_numpy(img)
-            
-            vision_outputs = self._run_onnx_session('vision', {'image': img_np})
-            vision_embeds_list.append(vision_outputs['output_embeds'])  # [1, 64, 960]
-        
+
+            vision_outputs = self._run_onnx_session("vision", {"image": img_np})
+            vision_embeds_list.append(vision_outputs["output_embeds"])  # [1, 64, 960]
+
         # Concatenate vision embeddings from all cameras
         vision_embeds = np.concatenate(vision_embeds_list, axis=1)  # [1, num_cameras*64, 960]
 
         # 2. Text encoding
         # Text model expects: tokens [batch, seq_len] -> output_embeds [batch, seq_len, 960]
-        text_outputs = self._run_onnx_session('text', {'tokens': lang_tokens_np})
-        text_embeds = text_outputs['output_embeds']  # [batch, seq_len, 960]
+        text_outputs = self._run_onnx_session("text", {"tokens": lang_tokens_np})
+        text_embeds = text_outputs["output_embeds"]  # [batch, seq_len, 960]
 
         # 3. State projection
         # State model expects: state [1, 32] -> output [1, 960]
-        state_outputs = self._run_onnx_session('state_proj', {'state': state_np})
-        state_embeds = state_outputs['3']  # [1, 960]
+        state_outputs = self._run_onnx_session("state_proj", {"state": state_np})
+        state_embeds = state_outputs["3"]  # [1, 960]
         state_embeds = np.expand_dims(state_embeds, axis=1)  # [1, 1, 960]
 
         # 4. Combine embeddings: [vision_embeds, text_embeds, state_embeds]
         # Total sequence length should be 177 (as seen in prefill model)
         vlm_embeds = np.concatenate([vision_embeds, text_embeds, state_embeds], axis=1)  # [1, 177, 960]
-        
+
         # Create attention mask and position IDs for prefill
         seq_len = vlm_embeds.shape[1]
         attention_mask = np.ones((batch_size, seq_len, seq_len), dtype=bool)
@@ -310,28 +316,31 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
         # 5. Expert prefill - generates KV cache
         # Prefill expects: vlm_embeds [1, 177, 960], attention_mask [1, 177, 177], position_ids [1, 177]
         # Returns: vlm_output_embeds [1, 177, 960] + 16 layers of KV cache
-        prefill_outputs = self._run_onnx_session('expert_prefill', {
-            'vlm_embeds': vlm_embeds,
-            'attention_mask': attention_mask,
-            'position_ids': position_ids,
-        })
-        
+        prefill_outputs = self._run_onnx_session(
+            "expert_prefill",
+            {
+                "vlm_embeds": vlm_embeds,
+                "attention_mask": attention_mask,
+                "position_ids": position_ids,
+            },
+        )
+
         # Extract KV cache from prefill
         past_key_values = {}
         for i in range(16):  # 16 layers
-            past_key_values[f'past_key_{i}'] = prefill_outputs[f'present_key_{i}']
-            past_key_values[f'past_value_{i}'] = prefill_outputs[f'present_value_{i}']
+            past_key_values[f"past_key_{i}"] = prefill_outputs[f"present_key_{i}"]
+            past_key_values[f"past_value_{i}"] = prefill_outputs[f"present_value_{i}"]
 
         # 6. Initialize noise for flow matching
         chunk_size = 50  # From ONNX model shapes
         if noise is None:
             actions_shape = (batch_size, chunk_size, self.config.max_action_dim)
             noise = torch.randn(actions_shape, device=device)
-        
+
         x_t = self._to_numpy(noise)
 
         # 7. Iterative denoising
-        num_steps = self.config.num_steps if hasattr(self.config, 'num_steps') else 10
+        num_steps = self.config.num_steps if hasattr(self.config, "num_steps") else 10
         dt = -1.0 / num_steps
 
         for step in range(num_steps):
@@ -340,20 +349,20 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
 
             # Project action through action_in
             # action_in expects: action [1, 50, 32] -> output [1, 50, 720]
-            action_in_outputs = self._run_onnx_session('action_in_proj', {'action': x_t})
-            action_embeds = action_in_outputs['5']  # [1, 50, 720]
+            action_in_outputs = self._run_onnx_session("action_in_proj", {"action": x_t})
+            action_embeds = action_in_outputs["5"]  # [1, 50, 720]
 
             # Create time embedding (concatenate action_embeds with time)
             # time_in expects: time [1, 50, 1440] -> output [1, 50, 720]
             time_expanded = np.tile(time_scalar, (1, chunk_size, 720))  # [1, 50, 720]
             time_action_concat = np.concatenate([action_embeds, time_expanded], axis=-1)  # [1, 50, 1440]
-            
-            time_in_outputs = self._run_onnx_session('time_in_proj', {'time': time_action_concat})
-            time_embeds = time_in_outputs['5']  # [1, 50, 720]
+
+            time_in_outputs = self._run_onnx_session("time_in_proj", {"time": time_action_concat})
+            time_embeds = time_in_outputs["5"]  # [1, 50, 720]
 
             # time_out projection
-            time_out_outputs = self._run_onnx_session('time_out_proj', {'time': time_embeds})
-            expert_embeds = time_out_outputs['5']  # [1, 50, 720]
+            time_out_outputs = self._run_onnx_session("time_out_proj", {"time": time_embeds})
+            expert_embeds = time_out_outputs["5"]  # [1, 50, 720]
 
             # Expert decode with KV cache
             # Create attention mask and position IDs for decode
@@ -364,25 +373,25 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
 
             # Prepare decode inputs
             decode_inputs = {
-                'expert_embeds': expert_embeds,
-                'attention_mask': decode_attention_mask,
-                'position_ids': decode_position_ids,
+                "expert_embeds": expert_embeds,
+                "attention_mask": decode_attention_mask,
+                "position_ids": decode_position_ids,
             }
             decode_inputs.update(past_key_values)
 
             # Run expert decode
-            decode_outputs = self._run_onnx_session('expert_decode', decode_inputs)
-            expert_output_embeds = decode_outputs['expert_output_embeds']  # [1, 50, 720]
+            decode_outputs = self._run_onnx_session("expert_decode", decode_inputs)
+            expert_output_embeds = decode_outputs["expert_output_embeds"]  # [1, 50, 720]
 
             # Update KV cache for next iteration
             for i in range(16):
-                past_key_values[f'past_key_{i}'] = decode_outputs[f'present_key_{i}']
-                past_key_values[f'past_value_{i}'] = decode_outputs[f'present_value_{i}']
+                past_key_values[f"past_key_{i}"] = decode_outputs[f"present_key_{i}"]
+                past_key_values[f"past_value_{i}"] = decode_outputs[f"present_value_{i}"]
 
             # Project back to action space
             # action_out expects: action [1, 50, 720] -> output [1, 50, 32]
-            action_out_outputs = self._run_onnx_session('action_out_proj', {'action': expert_output_embeds})
-            v_t = action_out_outputs['5']  # [1, 50, 32]
+            action_out_outputs = self._run_onnx_session("action_out_proj", {"action": expert_output_embeds})
+            v_t = action_out_outputs["5"]  # [1, 50, 32]
 
             # Update x_t (flow matching step)
             x_t = x_t + dt * v_t
@@ -415,7 +424,7 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
     ) -> Tensor:
         """
         Select a single action given environment observations.
-        
+
         This method manages actions in a queue and only calls predict_action_chunk
         when the queue is empty.
         """
@@ -439,18 +448,14 @@ class SmolVLAONNXPolicy(PreTrainedPolicy):
 
     def get_inference_stats(self) -> dict:
         """Get statistics about loaded ONNX models."""
-        stats = {
-            'num_models': len(self.sessions),
-            'providers': self.providers,
-            'models': {}
-        }
-        
+        stats = {"num_models": len(self.sessions), "providers": self.providers, "models": {}}
+
         for key, session in self.sessions.items():
             inputs = [(inp.name, inp.shape, inp.type) for inp in session.get_inputs()]
             outputs = [(out.name, out.shape, out.type) for out in session.get_outputs()]
-            stats['models'][key] = {
-                'inputs': inputs,
-                'outputs': outputs,
+            stats["models"][key] = {
+                "inputs": inputs,
+                "outputs": outputs,
             }
-        
+
         return stats

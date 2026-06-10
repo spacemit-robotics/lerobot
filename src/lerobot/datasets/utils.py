@@ -1237,7 +1237,7 @@ class LookAheadError(Exception):
     pass
 
 
-class Backtrackable(Generic[T]):
+class Backtrackable(Generic[T]):  # noqa: UP046 - Board py38 syntax.
     """
     Wrap any iterator/iterable so you can step back up to `history` items
     and look ahead up to `lookahead` items.

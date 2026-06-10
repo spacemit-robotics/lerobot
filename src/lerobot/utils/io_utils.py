@@ -35,7 +35,7 @@ def write_video(video_path, stacked_frames, fps):
         imageio.mimsave(video_path, stacked_frames, fps=fps)
 
 
-def deserialize_json_into_object(fpath: Path, obj: TJson) -> TJson:
+def deserialize_json_into_object(fpath: Path, obj: TJson) -> TJson:  # noqa: UP047 - Board py38 syntax.
     """
     Loads the JSON data from `fpath` and recursively fills `obj` with the
     corresponding values (strictly matching structure and types).
