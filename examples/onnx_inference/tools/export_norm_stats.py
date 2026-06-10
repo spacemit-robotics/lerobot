@@ -35,6 +35,7 @@ Usage:
             --calibration ~/.cache/huggingface/lerobot/calibration/robots/so_follower/robot.json \
             --output models/onnx/act-fp32/act_norm_stats.txt
 """
+
 from __future__ import annotations
 
 import argparse
@@ -54,7 +55,7 @@ MOTOR_ORDER = [
 ]
 # norm mode per motor: body joints use DEGREES (use_degrees=True, the lerobot
 # SO-101 default), the gripper uses RANGE_0_100. See so_follower.py.
-NORM_MODE = {m: "DEGREES" for m in MOTOR_ORDER}
+NORM_MODE = dict.fromkeys(MOTOR_ORDER, "DEGREES")
 NORM_MODE["gripper"] = "RANGE_0_100"
 
 
@@ -63,7 +64,7 @@ def _load_safetensors_np(path: Path) -> dict[str, np.ndarray]:
 
     out: dict[str, np.ndarray] = {}
     with safe_open(str(path), framework="np") as sf:
-        for k in sf.keys():
+        for k in sf:
             out[k] = sf.get_tensor(k)
     return out
 
@@ -92,12 +93,8 @@ def read_meta(checkpoint: Path) -> dict:
 
 def build_lines(checkpoint: Path, calibration: Path | None) -> list[str]:
     meta = read_meta(checkpoint)
-    pre = _load_safetensors_np(
-        checkpoint / "policy_preprocessor_step_3_normalizer_processor.safetensors"
-    )
-    post = _load_safetensors_np(
-        checkpoint / "policy_postprocessor_step_0_unnormalizer_processor.safetensors"
-    )
+    pre = _load_safetensors_np(checkpoint / "policy_preprocessor_step_3_normalizer_processor.safetensors")
+    post = _load_safetensors_np(checkpoint / "policy_postprocessor_step_0_unnormalizer_processor.safetensors")
 
     lines: list[str] = ["# ACT norm stats + SO-101 calibration (generated)"]
     lines.append("cam_names " + " ".join(meta["cam_names"]))
@@ -113,7 +110,7 @@ def build_lines(checkpoint: Path, calibration: Path | None) -> list[str]:
     lines.append("state_std " + _fmt(pre["observation.state.std"]))
     lines.append("action_mean " + _fmt(post["action.mean"]))
     lines.append("action_std " + _fmt(post["action.std"]))
-    for key, name in zip(meta["image_keys"], meta["cam_names"]):
+    for key, name in zip(meta["image_keys"], meta["cam_names"], strict=True):
         lines.append(f"image_mean.{name} " + _fmt(pre[f"{key}.mean"]))
         lines.append(f"image_std.{name} " + _fmt(pre[f"{key}.std"]))
 
@@ -145,8 +142,7 @@ def parse_args() -> argparse.Namespace:
         help="pretrained_model dir (config.json + normalizer safetensors)",
     )
     default_cal = (
-        Path.home()
-        / ".cache/huggingface/lerobot/calibration/robots/so_follower/my_awesome_follower_arm.json"
+        Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower/my_awesome_follower_arm.json"
     )
     p.add_argument(
         "--calibration",
@@ -176,8 +172,10 @@ def main() -> None:
     lines = build_lines(args.checkpoint, calibration)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines) + "\n")
-    print(f"[export_norm_stats] wrote {args.output} ({len(lines)} lines, "
-          f"calibration={'yes' if calibration else 'NO'})")
+    print(
+        f"[export_norm_stats] wrote {args.output} ({len(lines)} lines, "
+        f"calibration={'yes' if calibration else 'NO'})"
+    )
 
 
 if __name__ == "__main__":

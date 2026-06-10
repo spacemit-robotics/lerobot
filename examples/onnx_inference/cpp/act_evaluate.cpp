@@ -283,6 +283,8 @@ struct OnnxRunner {
             else if (n == "state")
                 ins.push_back(Ort::Value::CreateTensor<float>(
                     mem, state.data(), state.size(), st_shape.data(), st_shape.size()));
+            else
+                throw runtime_error("unhandled input: " + n);
         }
         for (auto& s : in_names) in_ptr.push_back(s.c_str());
         for (auto& s : out_names) out_ptr.push_back(s.c_str());

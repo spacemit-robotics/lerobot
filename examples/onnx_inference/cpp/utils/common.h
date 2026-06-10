@@ -45,8 +45,18 @@ inline std::vector<float> LoadNpyF32(const std::string& path, std::vector<int64_
     uint8_t major = 0, minor = 0;
     f.read(reinterpret_cast<char*>(&major), 1);
     f.read(reinterpret_cast<char*>(&minor), 1);
-    uint16_t hlen = 0;
-    f.read(reinterpret_cast<char*>(&hlen), 2);
+    (void)minor;
+
+    uint32_t hlen = 0;
+    if (major == 1) {
+        uint16_t hlen16 = 0;
+        f.read(reinterpret_cast<char*>(&hlen16), sizeof(hlen16));
+        hlen = hlen16;
+    } else if (major == 2) {
+        f.read(reinterpret_cast<char*>(&hlen), sizeof(hlen));
+    } else {
+        throw std::runtime_error("unsupported npy version: " + path);
+    }
     std::string header(hlen, '\0');
     f.read(&header[0], hlen);
     if (header.find("'<f4'") == std::string::npos && header.find("\"<f4\"") == std::string::npos)

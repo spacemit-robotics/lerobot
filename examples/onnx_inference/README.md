@@ -32,25 +32,16 @@ onnx_inference/
 
 ## 性能数据
 
-### onnxruntime_perf_test results
-
-| 模型 | 配置 | 最小延迟 |
-|---|---|---|
-| act-fp32/act.onnx | EP 8 线程 | 1290.0 ms |
-| act-int8/act.q.onnx | EP 8 线程 | 210.9 ms |
-
-> 测试方法：./run_test.sh true model-path 8
-
 ### Python Benchmark
 
-| 模型 | 配置 | 平均延迟 |
-|---|---|---|
+| 模型     | 配置      | 平均延迟  |
+| -------- | --------- | --------- |
 | act-fp32 | EP 8 线程 | 1290.0 ms |
-| act-int8 | EP 8 线程 | 210.9 ms |
+| act-int8 | EP 8 线程 | 210.9 ms  |
 
 ### C++ Benchmark
 
-| 模型 | 配置 | 平均延迟 |
-|---|---|---|
+| 模型     | 配置      | 平均延迟  |
+| -------- | --------- | --------- |
 | act-fp32 | EP 8 线程 | 1288.3 ms |
-| act-int8 | EP 8 线程 | 195.1 ms |
+| act-int8 | EP 8 线程 | 195.1 ms  |

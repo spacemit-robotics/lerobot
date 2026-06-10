@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 
     // ---- Build inputs ------------------------------------------------------
     mt19937 gen(cfg.seed);
-    normal_distribution<float> nd(0.0f, 1.0f);
+    normal_distribution<float> normal_dist(0.0f, 1.0f);
 
     vector<float> images, state;
     vector<int64_t> img_shape, st_shape;
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
         size_t n = 1;
         for (auto d : img_shape) n *= d;
         images.resize(n);
-        for (auto& v : images) v = nd(gen);
+        for (auto& v : images) v = normal_dist(gen);
     }
     if (cfg.state_dim > 0) {
         if (!cfg.state_npy.empty()) {
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
         } else {
             st_shape = {1, cfg.state_dim};
             state.resize((size_t)cfg.state_dim);
-            for (auto& v : state) v = nd(gen);
+            for (auto& v : state) v = normal_dist(gen);
         }
     }
 
@@ -247,6 +247,3 @@ int main(int argc, char** argv) {
     }
     return 0;
 }
-
-
-

@@ -36,6 +36,7 @@ pip install spacemit_ort safetensors
 ## 前置准备
 
 onnx 模型和 pytorch 检查点：
+
 - ACT FP32：`models/onnx/act-fp32/act.onnx`
 - ACT INT8：`models/onnx/act-int8/act.q.onnx`
 - ACT checkpoint：`models/pytorch/act/checkpoints/100000/pretrained_model`
@@ -47,9 +48,10 @@ onnx 模型和 pytorch 检查点：
 #### FP32 测试
 
 ```bash
-python python/act_benchmark.py \
-  --onnx models/onnx/act-fp32/act.onnx \
-  --checkpoint models/pytorch/act/checkpoints/100000/pretrained_model \
+cd python
+python act_benchmark.py \
+  --onnx ../models/onnx/act-fp32/act.onnx \
+  --checkpoint ../models/pytorch/act/checkpoints/100000/pretrained_model \
   --use-spacemit-ep --ep-threads 8 --ep-affinity "8;9;10;11;12;13;14;15" \
   --warmup 5 --iters 20
 ```
@@ -57,9 +59,10 @@ python python/act_benchmark.py \
 #### INT8 测试
 
 ```bash
-python python/act_benchmark.py \
-  --onnx models/onnx/act-int8/act.q.onnx \
-  --checkpoint models/pytorch/act/checkpoints/100000/pretrained_model \
+cd python
+python act_benchmark.py \
+  --onnx ../models/onnx/act-int8/act.q.onnx \
+  --checkpoint ../models/pytorch/act/checkpoints/100000/pretrained_model \
   --use-spacemit-ep --ep-threads 8 --ep-affinity "8;9;10;11;12;13;14;15" \
   --warmup 5 --iters 20
 ```
@@ -67,9 +70,10 @@ python python/act_benchmark.py \
 ## 真机运行
 
 ```bash
-python python/act_evaluate.py \
-  --onnx models/onnx/act-int8/act.q.onnx \
-  --checkpoint models/pytorch/act/checkpoints/100000/pretrained_model \
+cd python
+python act_evaluate.py \
+  --onnx ../models/onnx/act-int8/act.q.onnx \
+  --checkpoint ../models/pytorch/act/checkpoints/100000/pretrained_model \
   --port /dev/ttyACM0 --cam top=15 --cam wrist=13 \
   --use-spacemit-ep --ep-threads 8 --ep-affinity "8;9;10;11;12;13;14;15"
 ```

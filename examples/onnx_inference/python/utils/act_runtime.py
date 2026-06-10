@@ -50,9 +50,7 @@ def build_session(
     provider_options = [{}]
     if use_spacemit_ep:
         if spacemit_ort is None:
-            raise RuntimeError(
-                "spacemit_ort is not installed; cannot use SpaceMITExecutionProvider"
-            )
+            raise RuntimeError("spacemit_ort is not installed; cannot use SpaceMITExecutionProvider")
         providers = ["SpaceMITExecutionProvider", "CPUExecutionProvider"]
         provider_options = [
             {

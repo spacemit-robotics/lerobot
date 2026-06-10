@@ -24,6 +24,7 @@ Usage:
     python compare_act_onnx.py --onnx models/onnx/act-fp32/act.onnx \
       --checkpoint <ckpt> --with-torch
 """
+
 from __future__ import annotations
 
 import argparse
@@ -67,18 +68,15 @@ def make_fixed_inputs(meta: dict, seed: int = 0, batch_size: int = 1) -> dict[st
     if meta["image_features"]:
         n_cam = len(meta["image_features"])
         _, (c, h, w) = meta["image_features"][0]
-        inputs["images"] = rng.standard_normal(
-            (batch_size, n_cam, c, h, w), dtype=np.float32
-        )
+        inputs["images"] = rng.standard_normal((batch_size, n_cam, c, h, w), dtype=np.float32)
     if meta["state_dim"]:
-        inputs["state"] = rng.standard_normal(
-            (batch_size, meta["state_dim"]), dtype=np.float32
-        )
+        inputs["state"] = rng.standard_normal((batch_size, meta["state_dim"]), dtype=np.float32)
     return inputs
 
 
-def build_session(onnx_path: Path, use_spacemit_ep: bool, ep_threads: int = 4,
-                  ep_affinity: str = "", cpu_threads: int = 0) -> ort.InferenceSession:
+def build_session(
+    onnx_path: Path, use_spacemit_ep: bool, ep_threads: int = 4, ep_affinity: str = "", cpu_threads: int = 0
+) -> ort.InferenceSession:
     so = ort.SessionOptions()
     so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     if cpu_threads > 0:
@@ -114,8 +112,9 @@ def run_onnx(sess: ort.InferenceSession, inputs: dict[str, np.ndarray], warmup: 
         out = sess.run(None, feed)
         times.append((time.perf_counter() - t0) * 1000.0)
     actions = np.asarray(out[0], dtype=np.float32)
-    print(f"[onnx] output shape={actions.shape} "
-          f"latency: mean={np.mean(times):.2f}ms min={np.min(times):.2f}ms")
+    print(
+        f"[onnx] output shape={actions.shape} latency: mean={np.mean(times):.2f}ms min={np.min(times):.2f}ms"
+    )
     return actions
 
 
@@ -132,6 +131,7 @@ def run_torch_reference(checkpoint: Path, inputs: dict[str, np.ndarray]) -> np.n
         sys.path.insert(0, str(local_src))
     sys.path.insert(0, str(TOOLS_DIR))
     from act_pytorch_to_onnx import ACTInferenceModule  # noqa: E402
+
     from lerobot.policies.act.modeling_act import ACTPolicy  # noqa: E402
 
     policy = ACTPolicy.from_pretrained(str(checkpoint))
@@ -152,8 +152,10 @@ def report_diff(onnx_out: np.ndarray, ref: np.ndarray, atol: float, rtol: float)
     denom = np.abs(ref) + 1e-9
     max_rel = float((diff / denom).max())
     ok = bool(np.allclose(onnx_out, ref, atol=atol, rtol=rtol))
-    print(f"[diff] max|abs|={max_abs:.3e} max|rel|={max_rel:.3e} "
-          f"atol={atol} rtol={rtol} -> {'OK' if ok else 'MISMATCH'}")
+    print(
+        f"[diff] max|abs|={max_abs:.3e} max|rel|={max_rel:.3e} "
+        f"atol={atol} rtol={rtol} -> {'OK' if ok else 'MISMATCH'}"
+    )
     return ok
 
 
@@ -218,8 +220,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     meta = read_act_config(args.checkpoint)
-    print(f"[config] cameras={len(meta['image_features'])} state={meta['state_dim']} "
-          f"action_dim={meta['action_dim']} chunk={meta['chunk_size']}")
+    print(
+        f"[config] cameras={len(meta['image_features'])} state={meta['state_dim']} "
+        f"action_dim={meta['action_dim']} chunk={meta['chunk_size']}"
+    )
 
     inputs = make_fixed_inputs(meta, seed=args.seed, batch_size=args.batch_size)
     for name, arr in inputs.items():
@@ -253,8 +257,7 @@ def main() -> int:
         print(f"[ref] loaded reference -> {args.ref_npy} shape={ref.shape}")
 
     if ref is None:
-        print("[done] ONNX-only run (no reference to compare). "
-              "Use --with-torch or --ref-npy to compare.")
+        print("[done] ONNX-only run (no reference to compare). Use --with-torch or --ref-npy to compare.")
         return 0
 
     ok = report_diff(onnx_out, ref, args.atol, args.rtol)

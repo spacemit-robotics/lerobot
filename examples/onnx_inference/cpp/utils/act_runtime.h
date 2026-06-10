@@ -7,6 +7,7 @@
 #define ONNX_INFERENCE_ACT_CPP_UTILS_ACT_RUNTIME_H_
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -76,6 +77,8 @@ struct ActOnnxRunner {
             } else if (n == "state") {
                 ins.push_back(Ort::Value::CreateTensor<float>(
                     mem, state.data(), state.size(), st_shape.data(), st_shape.size()));
+            } else {
+                throw std::runtime_error("unhandled input: " + n);
             }
         }
         for (auto& s : in_names) in_ptr.push_back(s.c_str());

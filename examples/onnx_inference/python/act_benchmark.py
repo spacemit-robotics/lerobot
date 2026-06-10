@@ -34,16 +34,22 @@ from utils.act_runtime import build_session as build_ort_session, random_float
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark ACT ONNX inference latency")
     parser.add_argument("--onnx", type=Path, required=True, help="Path to ACT ONNX model")
-    parser.add_argument("--checkpoint", type=Path, required=True,
-                        help="Path to pretrained_model dir for config and normalization stats")
-    parser.add_argument("--use-spacemit-ep", action="store_true",
-                        help="Use SpaceMITExecutionProvider if available")
-    parser.add_argument("--ep-threads", type=int, default=8,
-                        help="SpaceMIT EP intra thread count")
-    parser.add_argument("--ep-affinity", default="8;9;10;11;12;13;14;15",
-                        help="SpaceMIT EP intra thread affinity string")
-    parser.add_argument("--cpu-threads", type=int, default=0,
-                        help="ORT CPU intra-op thread count (0 = default)")
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        required=True,
+        help="Path to pretrained_model dir for config and normalization stats",
+    )
+    parser.add_argument(
+        "--use-spacemit-ep", action="store_true", help="Use SpaceMITExecutionProvider if available"
+    )
+    parser.add_argument("--ep-threads", type=int, default=8, help="SpaceMIT EP intra thread count")
+    parser.add_argument(
+        "--ep-affinity", default="8;9;10;11;12;13;14;15", help="SpaceMIT EP intra thread affinity string"
+    )
+    parser.add_argument(
+        "--cpu-threads", type=int, default=0, help="ORT CPU intra-op thread count (0 = default)"
+    )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
     parser.add_argument("--iters", type=int, default=20, help="Measurement iterations")
     parser.add_argument("--batch", type=int, default=1, help="Batch size for random inputs")
@@ -87,7 +93,7 @@ def load_norm_stats(checkpoint_dir: Path, meta: dict) -> dict:
         "image_mean": {},
         "image_std": {},
     }
-    for key, name in zip(meta["image_keys"], meta["cam_names"]):
+    for key, name in zip(meta["image_keys"], meta["cam_names"], strict=True):
         stats["image_mean"][name] = load_tensor(pre_path, f"{key}.mean").reshape(3, 1, 1)
         stats["image_std"][name] = load_tensor(pre_path, f"{key}.std").reshape(3, 1, 1)
     return stats
@@ -96,10 +102,7 @@ def load_norm_stats(checkpoint_dir: Path, meta: dict) -> dict:
 def build_random_inputs(session: ort.InferenceSession, batch: int):
     feeds = {}
     for inp in session.get_inputs():
-        shape = [
-            batch if (s is None or s == "batch" or s == "?" or s == -1) else s
-            for s in inp.shape
-        ]
+        shape = [batch if (s is None or s == "batch" or s == "?" or s == -1) else s for s in inp.shape]
         dtype = np.float16 if inp.type == "tensor(float16)" else np.float32
         if inp.type in {"tensor(float)", "tensor(float32)", "tensor(float16)"}:
             feeds[inp.name] = random_float(tuple(shape), dtype)
@@ -120,7 +123,7 @@ def run_benchmark(session: ort.InferenceSession, feeds: dict, warmup: int, iters
         t0 = time.perf_counter()
         session.run(output_names, feeds)
         latencies.append((time.perf_counter() - t0) * 1000.0)
-        print(f"iter {i+1}/{iters}: {latencies[-1]:.1f} ms")
+        print(f"iter {i + 1}/{iters}: {latencies[-1]:.1f} ms")
 
     arr = np.array(latencies)
     return {

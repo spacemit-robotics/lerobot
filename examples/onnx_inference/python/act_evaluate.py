@@ -33,6 +33,7 @@ Example:
     python act_evaluate.py ... --use-spacemit-ep --ep-threads 8 \
         --ep-affinity "8;9;10;11;12;13;14;15"
 """
+
 from __future__ import annotations
 
 import argparse
@@ -42,7 +43,6 @@ from collections import deque
 from pathlib import Path
 
 import numpy as np
-
 from utils import safe_disconnect, suspend_sigint
 
 EXAMPLE_DIR = Path(__file__).resolve().parent
@@ -91,7 +91,7 @@ def _load_safetensors_np(path: Path) -> dict[str, np.ndarray]:
 
     out: dict[str, np.ndarray] = {}
     with safe_open(str(path), framework="np") as sf:
-        for k in sf.keys():
+        for k in sf:
             out[k] = sf.get_tensor(k)
     return out
 
@@ -104,12 +104,8 @@ def load_norm_stats(checkpoint: Path, meta: dict) -> dict:
       action_mean/std       (action_dim,)
       image_mean/std[name]  (3,1,1) per camera
     """
-    pre = _load_safetensors_np(
-        checkpoint / "policy_preprocessor_step_3_normalizer_processor.safetensors"
-    )
-    post = _load_safetensors_np(
-        checkpoint / "policy_postprocessor_step_0_unnormalizer_processor.safetensors"
-    )
+    pre = _load_safetensors_np(checkpoint / "policy_preprocessor_step_3_normalizer_processor.safetensors")
+    post = _load_safetensors_np(checkpoint / "policy_postprocessor_step_0_unnormalizer_processor.safetensors")
 
     def f32(d, key):
         return np.asarray(d[key], dtype=np.float32)
@@ -122,7 +118,7 @@ def load_norm_stats(checkpoint: Path, meta: dict) -> dict:
         "image_mean": {},
         "image_std": {},
     }
-    for key, name in zip(meta["image_keys"], meta["cam_names"]):
+    for key, name in zip(meta["image_keys"], meta["cam_names"], strict=True):
         stats["image_mean"][name] = f32(pre, f"{key}.mean").reshape(3, 1, 1)
         stats["image_std"][name] = f32(pre, f"{key}.std").reshape(3, 1, 1)
     return stats
@@ -152,8 +148,9 @@ def unnormalize_action(action: np.ndarray, mean: np.ndarray, std: np.ndarray) ->
 # --------------------------------------------------------------------------- #
 # ONNX session
 # --------------------------------------------------------------------------- #
-def build_session(onnx_path: Path, use_spacemit_ep: bool, ep_threads: int,
-                  ep_affinity: str, cpu_threads: int):
+def build_session(
+    onnx_path: Path, use_spacemit_ep: bool, ep_threads: int, ep_affinity: str, cpu_threads: int
+):
     import onnxruntime as ort
 
     so = ort.SessionOptions()
@@ -174,8 +171,9 @@ def build_session(onnx_path: Path, use_spacemit_ep: bool, ep_threads: int,
         providers = ["SpaceMITExecutionProvider", "CPUExecutionProvider"]
         provider_options = [opts, {}]
 
-    sess = ort.InferenceSession(str(onnx_path), sess_options=so,
-                                providers=providers, provider_options=provider_options)
+    sess = ort.InferenceSession(
+        str(onnx_path), sess_options=so, providers=providers, provider_options=provider_options
+    )
     in_names = [i.name for i in sess.get_inputs()]
     out_names = [o.name for o in sess.get_outputs()]
     return sess, in_names, out_names
@@ -184,16 +182,15 @@ def build_session(onnx_path: Path, use_spacemit_ep: bool, ep_threads: int,
 # --------------------------------------------------------------------------- #
 # Robot
 # --------------------------------------------------------------------------- #
-def build_robot(port: str, robot_id: str, cam_map: dict[str, int],
-                width: int, height: int, fps: int, fourcc: str):
+def build_robot(
+    port: str, robot_id: str, cam_map: dict[str, int], width: int, height: int, fps: int, fourcc: str
+):
     from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
     from lerobot.robots.so_follower.config_so_follower import SO101FollowerConfig
     from lerobot.robots.so_follower.so_follower import SO101Follower
 
     cameras = {
-        name: OpenCVCameraConfig(
-            index_or_path=index, fps=fps, width=width, height=height, fourcc=fourcc
-        )
+        name: OpenCVCameraConfig(index_or_path=index, fps=fps, width=width, height=height, fourcc=fourcc)
         for name, index in cam_map.items()
     }
     cfg = SO101FollowerConfig(port=port, id=robot_id, cameras=cameras)
@@ -234,8 +231,10 @@ def run_episode(robot, sess, in_names, out_names, meta, stats, args):
     t_start = time.perf_counter()
     step = 0
 
-    print(f"[ACT ONNX] starting episode: fps={args.fps} "
-          f"n_action_steps={n_action_steps} chunk_size={meta['chunk_size']}")
+    print(
+        f"[ACT ONNX] starting episode: fps={args.fps} "
+        f"n_action_steps={n_action_steps} chunk_size={meta['chunk_size']}"
+    )
     try:
         while time.perf_counter() - t_start < args.episode_time:
             loop_t0 = time.perf_counter()
@@ -253,7 +252,11 @@ def run_episode(robot, sess, in_names, out_names, meta, stats, args):
                             stats["image_mean"][name],
                             stats["image_std"][name],
                         )
-                        for _key, name in zip(meta["image_keys"], meta["cam_names"])
+                        for _key, name in zip(
+                            meta["image_keys"],
+                            meta["cam_names"],
+                            strict=True,
+                        )
                     ],
                     axis=0,
                 ).astype(np.float32)  # (n_cam, 3, H, W)
@@ -265,13 +268,15 @@ def run_episode(robot, sess, in_names, out_names, meta, stats, args):
                     queue.append(a)
 
             action_vec = queue.popleft()
-            sent = robot.send_action(build_action_dict(action_vec))
+            robot.send_action(build_action_dict(action_vec))
 
             if args.verbose:
                 msg = f"[step {step:4d}] action={np.round(action_vec, 2).tolist()}"
                 if state_vec is not None:
-                    msg = (f"[step {step:4d}] state={np.round(state_vec, 2).tolist()} "
-                           f"action={np.round(action_vec, 2).tolist()}")
+                    msg = (
+                        f"[step {step:4d}] state={np.round(state_vec, 2).tolist()} "
+                        f"action={np.round(action_vec, 2).tolist()}"
+                    )
                 print(msg, flush=True)
 
             loop_ms.append((time.perf_counter() - loop_t0) * 1e3)
@@ -290,12 +295,16 @@ def _report(inference_ms, loop_ms, steps):
     print(f"\n[ACT ONNX] episode done: {steps} steps")
     if inference_ms:
         a = np.array(inference_ms)
-        print(f"  inference (chunk): n={len(a)} mean={a.mean():.1f}ms "
-              f"median={np.median(a):.1f}ms min={a.min():.1f}ms max={a.max():.1f}ms")
+        print(
+            f"  inference (chunk): n={len(a)} mean={a.mean():.1f}ms "
+            f"median={np.median(a):.1f}ms min={a.min():.1f}ms max={a.max():.1f}ms"
+        )
     if loop_ms:
         b = np.array(loop_ms)
-        print(f"  loop: mean={b.mean():.1f}ms median={np.median(b):.1f}ms "
-              f"(target {1000.0 / max(b.mean(), 1e-9):.1f} -> effective fps)")
+        print(
+            f"  loop: mean={b.mean():.1f}ms median={np.median(b):.1f}ms "
+            f"(target {1000.0 / max(b.mean(), 1e-9):.1f} -> effective fps)"
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -316,27 +325,45 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Real-robot ONNX ACT control (SO-101).")
     # model / stats
     p.add_argument("--onnx", type=Path, required=True, help="Path to act.onnx")
-    p.add_argument("--checkpoint", type=Path, required=True,
-                   help="pretrained_model dir (for config.json + norm stats safetensors)")
+    p.add_argument(
+        "--checkpoint",
+        type=Path,
+        required=True,
+        help="pretrained_model dir (for config.json + norm stats safetensors)",
+    )
     # robot
     p.add_argument("--port", default="/dev/ttyACM0", help="SO-101 serial port")
-    p.add_argument("--robot-id", default="my_awesome_follower_arm",
-                   help="Robot id (selects the calibration file)")
-    p.add_argument("--cam", action="append", metavar="NAME=INDEX",
-                   help="Camera mapping, e.g. --cam top=13 --cam wrist=15 "
-                        "(must cover all VISUAL features; default top=13 wrist=15)")
+    p.add_argument(
+        "--robot-id", default="my_awesome_follower_arm", help="Robot id (selects the calibration file)"
+    )
+    p.add_argument(
+        "--cam",
+        action="append",
+        metavar="NAME=INDEX",
+        help="Camera mapping, e.g. --cam top=13 --cam wrist=15 "
+        "(must cover all VISUAL features; default top=13 wrist=15)",
+    )
     p.add_argument("--width", type=int, default=640)
     p.add_argument("--height", type=int, default=480)
     p.add_argument("--fourcc", default="MJPG")
-    p.add_argument("--cam-fps", type=int, default=30,
-                   help="Camera capture fps. Keep this at a camera-supported value, "
-                        "e.g. 30; --fps controls action playback speed.")
+    p.add_argument(
+        "--cam-fps",
+        type=int,
+        default=30,
+        help="Camera capture fps. Keep this at a camera-supported value, "
+        "e.g. 30; --fps controls action playback speed.",
+    )
     # control loop
-    p.add_argument("--fps", type=float, default=30.0,
-                   help="Action playback/control frequency. Independent of --cam-fps.")
+    p.add_argument(
+        "--fps", type=float, default=30.0, help="Action playback/control frequency. Independent of --cam-fps."
+    )
     p.add_argument("--episode-time", type=float, default=180.0, help="seconds")
-    p.add_argument("--n-action-steps", type=int, default=0,
-                   help="Actions consumed per predicted chunk (0 = config default)")
+    p.add_argument(
+        "--n-action-steps",
+        type=int,
+        default=0,
+        help="Actions consumed per predicted chunk (0 = config default)",
+    )
     p.add_argument("--task", default="", help="Task description (logging only)")
     # ONNX runtime
     p.add_argument("--use-spacemit-ep", action="store_true")
@@ -353,8 +380,10 @@ def main() -> None:
 
     meta = read_act_meta(args.checkpoint)
     stats = load_norm_stats(args.checkpoint, meta)
-    print(f"[ACT ONNX] cameras={meta['cam_names']} state_dim={meta['state_dim']} "
-          f"action_dim={meta['action_dim']} img={meta['img_c']}x{meta['img_h']}x{meta['img_w']}")
+    print(
+        f"[ACT ONNX] cameras={meta['cam_names']} state_dim={meta['state_dim']} "
+        f"action_dim={meta['action_dim']} img={meta['img_c']}x{meta['img_h']}x{meta['img_w']}"
+    )
     missing = [c for c in meta["cam_names"] if c not in cam_map]
     if missing:
         raise SystemExit(f"Missing --cam mapping for camera(s): {missing}")
@@ -362,11 +391,12 @@ def main() -> None:
     sess, in_names, out_names = build_session(
         args.onnx, args.use_spacemit_ep, args.ep_threads, args.ep_affinity, args.cpu_threads
     )
-    print(f"[ACT ONNX] ONNX inputs={in_names} outputs={out_names} "
-          f"provider={'SpaceMIT EP' if args.use_spacemit_ep else 'CPU'}")
+    print(
+        f"[ACT ONNX] ONNX inputs={in_names} outputs={out_names} "
+        f"provider={'SpaceMIT EP' if args.use_spacemit_ep else 'CPU'}"
+    )
 
-    robot = build_robot(args.port, args.robot_id, cam_map,
-                        args.width, args.height, args.cam_fps, args.fourcc)
+    robot = build_robot(args.port, args.robot_id, cam_map, args.width, args.height, args.cam_fps, args.fourcc)
     print(f"[ACT ONNX] connecting robot on {args.port} (id={args.robot_id}) ...")
     try:
         robot.connect()

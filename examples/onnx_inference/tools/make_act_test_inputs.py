@@ -22,6 +22,7 @@ Run on any host with onnxruntime (CPU is fine):
             --stats models/onnx/act-fp32/act_norm_stats.txt \
       --out-dir inputs/
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,10 +39,14 @@ MAX_STEP = 4095.0
 def parse_stats(path: Path) -> dict:
     s = {
         "cam_names": [],
-        "img_c": 3, "img_h": 480, "img_w": 640,
-        "state_dim": 6, "action_dim": 6,
+        "img_c": 3,
+        "img_h": 480,
+        "img_w": 640,
+        "state_dim": 6,
+        "action_dim": 6,
         "motor_order": [],
-        "image_mean": {}, "image_std": {},
+        "image_mean": {},
+        "image_std": {},
         "calib": {},
     }
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -63,11 +68,13 @@ def parse_stats(path: Path) -> dict:
         elif key in ("state_mean", "state_std", "action_mean", "action_std"):
             s[key] = np.array([float(x) for x in vals], dtype=np.float32)
         elif key.startswith("image_mean."):
-            s["image_mean"][key[len("image_mean."):]] = np.array(
-                [float(x) for x in vals], dtype=np.float32).reshape(3, 1, 1)
+            s["image_mean"][key[len("image_mean.") :]] = np.array(
+                [float(x) for x in vals], dtype=np.float32
+            ).reshape(3, 1, 1)
         elif key.startswith("image_std."):
-            s["image_std"][key[len("image_std."):]] = np.array(
-                [float(x) for x in vals], dtype=np.float32).reshape(3, 1, 1)
+            s["image_std"][key[len("image_std.") :]] = np.array(
+                [float(x) for x in vals], dtype=np.float32
+            ).reshape(3, 1, 1)
         elif key == "calib":
             name = vals[0]
             d, i = {}, 1
@@ -114,21 +121,20 @@ def main():
     args.out_dir.mkdir(parents=True, exist_ok=True)
     st = parse_stats(args.stats)
 
-    H, W = st["img_h"], st["img_w"]
-    S = st["state_dim"]
+    img_h, img_w = st["img_h"], st["img_w"]
+    state_dim = st["state_dim"]
     rng = np.random.default_rng(args.seed)
 
     raw_imgs = {
-        name: rng.integers(0, 256, size=(H, W, 3), dtype=np.uint8)
-        for name in st["cam_names"]
+        name: rng.integers(0, 256, size=(img_h, img_w, 3), dtype=np.uint8) for name in st["cam_names"]
     }
-    state_deg = np.array([5.0, -10.0, 15.0, -5.0, 30.0, 50.0], dtype=np.float32)[:S]
+    state_deg = np.array([5.0, -10.0, 15.0, -5.0, 30.0, 50.0], dtype=np.float32)[:state_dim]
 
     # images: (x/255 - mean)/std, HWC->CHW, stacked in model cam order
     norm_imgs = np.stack(
         [
-            (np.transpose(raw_imgs[name].astype(np.float32) / 255.0, (2, 0, 1))
-             - st["image_mean"][name]) / st["image_std"][name]
+            (np.transpose(raw_imgs[name].astype(np.float32) / 255.0, (2, 0, 1)) - st["image_mean"][name])
+            / st["image_std"][name]
             for name in st["cam_names"]
         ],
         axis=0,
@@ -141,6 +147,7 @@ def main():
     state_n = ((state_deg - st["state_mean"]) / st["state_std"]).astype(np.float32)
 
     import onnxruntime as ort
+
     sess = ort.InferenceSession(str(args.onnx), providers=["CPUExecutionProvider"])
     in_names = [i.name for i in sess.get_inputs()]
     out_names = [o.name for o in sess.get_outputs()]

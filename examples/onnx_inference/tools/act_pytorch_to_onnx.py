@@ -27,6 +27,7 @@ Usage:
   # Skip numerical validation (faster)
   python tools/act_pytorch_to_onnx.py --checkpoint <ckpt> --no-validate
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,7 +40,6 @@ from torch import Tensor, nn
 
 from lerobot.policies.act.configuration_act import ACTConfig
 from lerobot.policies.act.modeling_act import ACTPolicy
-from lerobot.utils.constants import OBS_ENV_STATE, OBS_IMAGES, OBS_STATE
 
 EXAMPLE_DIR = Path(__file__).resolve().parents[1]
 
@@ -83,9 +83,7 @@ class ACTInferenceModule(nn.Module):
         device = next(model.parameters()).device
 
         # Latent is a fixed zero vector at inference (VAE encoder unused).
-        latent_sample = torch.zeros(
-            [batch_size, cfg.latent_dim], dtype=torch.float32, device=device
-        )
+        latent_sample = torch.zeros([batch_size, cfg.latent_dim], dtype=torch.float32, device=device)
 
         # Build the prefix (single-token) sequence first: latent (+ state/env).
         # These are few (1-3 tokens) so a small stack is fine.
@@ -112,12 +110,10 @@ class ACTInferenceModule(nn.Module):
             for cam_idx in range(n_cam):
                 img = images[:, cam_idx]
                 cam_features = model.backbone(img)["feature_map"]
-                cam_pos = model.encoder_cam_feat_pos_embed(cam_features).to(
-                    dtype=cam_features.dtype
-                )
+                cam_pos = model.encoder_cam_feat_pos_embed(cam_features).to(dtype=cam_features.dtype)
                 cam_features = model.encoder_img_feat_input_proj(cam_features)
                 cam_features = cam_features.flatten(2).permute(2, 0, 1)  # (S,B,C)
-                cam_pos = cam_pos.flatten(2).permute(2, 0, 1)            # (S,B,C)
+                cam_pos = cam_pos.flatten(2).permute(2, 0, 1)  # (S,B,C)
                 cam_token_blocks.append(cam_features)
                 cam_pos_blocks.append(cam_pos)
             encoder_in_tokens = torch.cat(cam_token_blocks, dim=0)
@@ -190,9 +186,7 @@ class ACTTransformerModule(nn.Module):
             batch_size = state.shape[0]
         device = next(model.parameters()).device
 
-        latent_sample = torch.zeros(
-            [batch_size, cfg.latent_dim], dtype=torch.float32, device=device
-        )
+        latent_sample = torch.zeros([batch_size, cfg.latent_dim], dtype=torch.float32, device=device)
         prefix_tokens = [model.encoder_latent_input_proj(latent_sample)]
         if cfg.robot_state_feature:
             prefix_tokens.append(model.encoder_robot_state_input_proj(state))
