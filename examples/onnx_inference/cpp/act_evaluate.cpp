@@ -629,7 +629,7 @@ int main(int argc, char** argv) {
     cout << "\n";
 
 #ifdef ACT_ROBOT_HW
-    if (!cfg.images_npy.empty() && !cfg.state_npy.empty())
+    if (!cfg.images_npy.empty() || !cfg.state_npy.empty())
         return RunOffline(cfg, st, ort);
     return RunRobot(cfg, st, ort);
 #else

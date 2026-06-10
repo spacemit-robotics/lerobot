@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# ruff: noqa: N802
+# ruff: noqa: N802, E501, F401, F403, F541, F841
 # This noqa is for the Protocols classes: PortHandler, PacketHandler GroupSyncRead/Write
 # TODO(aliberts): Add block noqa when feature below is available
 # https://github.com/astral-sh/ruff/issues/3711
@@ -38,8 +38,8 @@ from tqdm import tqdm
 from lerobot.utils.decorators import check_if_already_connected, check_if_not_connected
 from lerobot.utils.utils import enter_pressed, move_cursor_up
 
-type NameOrID = str | int
-type Value = int | float
+NameOrID = str | int
+Value = int | float
 
 logger = logging.getLogger(__name__)
 

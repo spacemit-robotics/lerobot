@@ -48,9 +48,8 @@ from utils.act_runtime import build_session as build_ort_session
 
 EXAMPLE_DIR = Path(__file__).resolve().parent
 
-# Feature order is fixed by the training config (observation.state / action are
-# the 6 SO-101 motors in this order). Cameras are stacked in config.image_features
-# order, which is the JSON insertion order of input_features.
+# Fallback SO-101 feature order for older checkpoints whose config.json does not
+# carry explicit observation.state / action names.
 MOTOR_ORDER = [
     "shoulder_pan",
     "shoulder_lift",
@@ -68,8 +67,17 @@ def read_act_meta(checkpoint: Path) -> dict:
     """Read shapes / chunk_size / camera order from the checkpoint config.json."""
     cfg = json.loads((checkpoint / "config.json").read_text(encoding="utf-8"))
     image_keys = [k for k, v in cfg["input_features"].items() if v["type"] == "VISUAL"]
-    state_dim = cfg["input_features"]["observation.state"]["shape"][0]
-    action_dim = cfg["output_features"]["action"]["shape"][0]
+    state_feature = cfg["input_features"]["observation.state"]
+    action_feature = cfg["output_features"]["action"]
+    state_dim = state_feature["shape"][0]
+    action_dim = action_feature["shape"][0]
+    motor_order = (
+        state_feature.get("names")
+        or state_feature.get("motors")
+        or action_feature.get("names")
+        or action_feature.get("motors")
+        or MOTOR_ORDER[:state_dim]
+    )
     # camera short name = key without the "observation.images." prefix
     cam_names = [k.split("observation.images.")[-1] for k in image_keys]
     img_shape = cfg["input_features"][image_keys[0]]["shape"]  # [C, H, W]
@@ -78,6 +86,7 @@ def read_act_meta(checkpoint: Path) -> dict:
         "cam_names": cam_names,
         "state_dim": state_dim,
         "action_dim": action_dim,
+        "motor_order": motor_order,
         "chunk_size": cfg["chunk_size"],
         "n_action_steps": cfg["n_action_steps"],
         "img_c": img_shape[0],
@@ -164,14 +173,14 @@ def build_robot(
     return SO101Follower(cfg)
 
 
-def build_state_vector(obs: dict) -> np.ndarray:
-    """Pull the 6 motor positions out of the observation dict, in MOTOR_ORDER."""
-    return np.array([obs[f"{m}.pos"] for m in MOTOR_ORDER], dtype=np.float32)
+def build_state_vector(obs: dict, motor_order: list[str]) -> np.ndarray:
+    """Pull motor positions out of the observation dict in checkpoint order."""
+    return np.array([obs[f"{m}.pos"] for m in motor_order], dtype=np.float32)
 
 
-def build_action_dict(action_vec: np.ndarray) -> dict:
+def build_action_dict(action_vec: np.ndarray, motor_order: list[str]) -> dict:
     """Map the 6-D action vector back to {motor.pos: float} for send_action."""
-    return {f"{m}.pos": float(action_vec[i]) for i, m in enumerate(MOTOR_ORDER)}
+    return {f"{m}.pos": float(action_vec[i]) for i, m in enumerate(motor_order)}
 
 
 # --------------------------------------------------------------------------- #
@@ -211,7 +220,7 @@ def run_episode(robot, sess, in_names, out_names, meta, stats, args):
                 obs = robot.get_observation()
 
                 # Build inputs only when a new action chunk is needed.
-                state_vec = build_state_vector(obs)
+                state_vec = build_state_vector(obs, meta["motor_order"])
                 images = np.stack(
                     [
                         preprocess_image(
@@ -235,7 +244,7 @@ def run_episode(robot, sess, in_names, out_names, meta, stats, args):
                     queue.append(a)
 
             action_vec = queue.popleft()
-            robot.send_action(build_action_dict(action_vec))
+            robot.send_action(build_action_dict(action_vec, meta["motor_order"]))
 
             if args.verbose:
                 msg = f"[step {step:4d}] action={np.round(action_vec, 2).tolist()}"

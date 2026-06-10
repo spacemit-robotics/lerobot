@@ -90,11 +90,9 @@ def _make_reachy2_sdk_mock():
 
 @pytest.fixture(params=PARAMS, ids=lambda p: "default" if not p else ",".join(p.keys()))
 def reachy2(request):
-    with (
-        patch(
-            "lerobot.teleoperators.reachy2_teleoperator.reachy2_teleoperator.ReachySDK",
-            side_effect=lambda *a, **k: _make_reachy2_sdk_mock(),
-        ),
+    with patch(
+        "lerobot.teleoperators.reachy2_teleoperator.reachy2_teleoperator.ReachySDK",
+        side_effect=lambda *a, **k: _make_reachy2_sdk_mock(),
     ):
         overrides = request.param
         cfg = Reachy2TeleoperatorConfig(ip_address="192.168.0.200", **overrides)

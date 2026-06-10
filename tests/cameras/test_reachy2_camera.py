@@ -86,11 +86,9 @@ def _make_cam_manager_mock():
 )
 def camera(request):
     name, image_type = request.param
-    with (
-        patch(
-            "lerobot.cameras.reachy2_camera.reachy2_camera.CameraManager",
-            side_effect=lambda *a, **k: _make_cam_manager_mock(),
-        ),
+    with patch(
+        "lerobot.cameras.reachy2_camera.reachy2_camera.CameraManager",
+        side_effect=lambda *a, **k: _make_cam_manager_mock(),
     ):
         config = Reachy2CameraConfig(name=name, image_type=image_type)
         cam = Reachy2Camera(config)

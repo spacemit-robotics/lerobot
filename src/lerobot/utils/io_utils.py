@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +18,12 @@
 import json
 import warnings
 from pathlib import Path
+from typing import TypeVar
 
 import imageio
 
 JsonLike = str | int | float | bool | None | list["JsonLike"] | dict[str, "JsonLike"] | tuple["JsonLike", ...]
+TJson = TypeVar("TJson", bound=JsonLike)
 
 
 def write_video(video_path, stacked_frames, fps):
@@ -31,7 +35,7 @@ def write_video(video_path, stacked_frames, fps):
         imageio.mimsave(video_path, stacked_frames, fps=fps)
 
 
-def deserialize_json_into_object[T: JsonLike](fpath: Path, obj: T) -> T:
+def deserialize_json_into_object(fpath: Path, obj: TJson) -> TJson:
     """
     Loads the JSON data from `fpath` and recursively fills `obj` with the
     corresponding values (strictly matching structure and types).

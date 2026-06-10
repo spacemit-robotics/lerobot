@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# ruff: noqa: E501, F401, F403, F541, F841
+
 # Copyright 2024 Seungjae Lee and Yibin Wang and Haritheja Etukuru
 # and H. Jin Kim and Nur Muhammad Mahi Shafiullah and Lerrel Pinto
 # and The HuggingFace Inc. team. All rights reserved.

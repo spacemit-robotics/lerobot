@@ -18,7 +18,7 @@ tools/
 
 ```bash
 pip install -e ../../
-pip install onnx onnxruntime safetensors
+pip install torch torchvision onnx onnxruntime safetensors spacemit_ort
 ```
 
 ### ACT PyTorch -> ONNX FP32
