@@ -54,8 +54,23 @@ target_link_libraries(act_evaluate spacemit_ort_deps)
 
 if(ACT_ROBOT_HW)
     # motor library: components/peripherals/motor (libmotor.a, no ROS2).
-    set(MOTOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../peripherals/motor"
-        CACHE PATH "Path to components/peripherals/motor")
+    set(MOTOR_DIR "" CACHE PATH "Path to components/peripherals/motor")
+    if(NOT MOTOR_DIR)
+        foreach(MOTOR_DIR_CANDIDATE IN ITEMS
+            "${CMAKE_CURRENT_LIST_DIR}/../../../../../peripherals/motor"
+            "${CMAKE_CURRENT_LIST_DIR}/../../../../peripherals/motor"
+            "${CMAKE_CURRENT_LIST_DIR}/../../../peripherals/motor")
+            if(EXISTS "${MOTOR_DIR_CANDIDATE}/CMakeLists.txt")
+                set(MOTOR_DIR "${MOTOR_DIR_CANDIDATE}" CACHE PATH
+                    "Path to components/peripherals/motor" FORCE)
+                break()
+            endif()
+        endforeach()
+    endif()
+    if(NOT MOTOR_DIR OR NOT EXISTS "${MOTOR_DIR}/CMakeLists.txt")
+        message(FATAL_ERROR
+            "MOTOR_DIR was not found. Set -DMOTOR_DIR=/path/to/components/peripherals/motor.")
+    endif()
     set(SROBOTIS_PERIPHERALS_MOTOR_ENABLED_DRIVERS "drv_uart_feetech"
         CACHE STRING "Enabled motor drivers (semicolon-separated)." FORCE)
     find_package(OpenCV REQUIRED)

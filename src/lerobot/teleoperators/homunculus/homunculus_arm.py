@@ -116,8 +116,7 @@ class HomunculusArm(Teleoperator):
 
     def calibrate(self) -> None:
         print(
-            "\nMove all joints through their entire range of motion."
-            "\nRecording positions. Press ENTER to stop..."
+            "\nMove all joints through their entire range of motion.\nRecording positions. Press ENTER to stop..."
         )
         range_mins, range_maxes = self._record_ranges_of_motion()
 

@@ -186,43 +186,33 @@ def unitree_g1():
     mock_channel_pub = MagicMock(return_value=mocks["publisher_mock"])
     mock_channel_sub = MagicMock(return_value=mocks["subscriber_mock"])
 
-    with (
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1.make_cameras_from_configs",
-            return_value={},
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1.G1_29_ArmIK",
-            return_value=MagicMock(),
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1._SDKChannelFactoryInitialize",
-            mock_channel_init,
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1._SDKChannelPublisher",
-            mock_channel_pub,
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1._SDKChannelSubscriber",
-            mock_channel_sub,
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1.unitree_hg_msg_dds__LowCmd_",
-            MagicMock(return_value=mocks["lowcmd_default"]),
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1.hg_LowCmd",
-            MagicMock,
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1.hg_LowState",
-            MagicMock,
-        ),
-        patch(
-            "lerobot.robots.unitree_g1.unitree_g1.CRC",
-            MagicMock(return_value=mocks["crc_mock"]),
-        ),
+    with patch(
+        "lerobot.robots.unitree_g1.unitree_g1.make_cameras_from_configs",
+        return_value={},
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1.G1_29_ArmIK",
+        return_value=MagicMock(),
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1._SDKChannelFactoryInitialize",
+        mock_channel_init,
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1._SDKChannelPublisher",
+        mock_channel_pub,
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1._SDKChannelSubscriber",
+        mock_channel_sub,
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1.unitree_hg_msg_dds__LowCmd_",
+        MagicMock(return_value=mocks["lowcmd_default"]),
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1.hg_LowCmd",
+        MagicMock,
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1.hg_LowState",
+        MagicMock,
+    ), patch(
+        "lerobot.robots.unitree_g1.unitree_g1.CRC",
+        MagicMock(return_value=mocks["crc_mock"]),
     ):
         from lerobot.robots.unitree_g1.unitree_g1 import UnitreeG1
 

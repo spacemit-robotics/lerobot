@@ -154,8 +154,7 @@ def run_exo_calibration(
         import matplotlib.pyplot as plt
     except ImportError as e:
         raise ImportError(
-            "Calibration requires matplotlib and opencv-python. "
-            "Install with: pip install matplotlib opencv-python"
+            "Calibration requires matplotlib and opencv-python. Install with: pip install matplotlib opencv-python"
         ) from e
 
     from .exo_serial import read_raw_from_serial

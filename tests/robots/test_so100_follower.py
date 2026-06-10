@@ -66,13 +66,10 @@ def follower():
         bus_mock.is_calibrated = True
         return bus_mock
 
-    with (
-        patch(
-            "lerobot.robots.so_follower.so_follower.FeetechMotorsBus",
-            side_effect=_bus_side_effect,
-        ),
-        patch.object(SO100Follower, "configure", lambda self: None),
-    ):
+    with patch(
+        "lerobot.robots.so_follower.so_follower.FeetechMotorsBus",
+        side_effect=_bus_side_effect,
+    ), patch.object(SO100Follower, "configure", lambda self: None):
         cfg = SO100FollowerConfig(port="/dev/null")
         robot = SO100Follower(cfg)
         yield robot

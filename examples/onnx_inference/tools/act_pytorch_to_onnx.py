@@ -95,9 +95,7 @@ class ACTInferenceModule(nn.Module):
         # (n_prefix, B, C)
         encoder_in_tokens = torch.stack(prefix_tokens, dim=0)
         # 1D learned pos embed has exactly n_prefix rows.
-        encoder_in_pos_embed = model.encoder_1d_feature_pos_embed.weight[
-            : encoder_in_tokens.shape[0]
-        ].unsqueeze(1)
+        encoder_in_pos_embed = model.encoder_1d_feature_pos_embed.weight[: encoder_in_tokens.shape[0]].unsqueeze(1)
 
         if cfg.image_features:
             n_cam = images.shape[1]
@@ -193,9 +191,7 @@ class ACTTransformerModule(nn.Module):
         if cfg.env_state_feature:
             prefix_tokens.append(model.encoder_env_state_input_proj(env_state))
         encoder_in_tokens = torch.stack(prefix_tokens, dim=0)
-        encoder_in_pos_embed = model.encoder_1d_feature_pos_embed.weight[
-            : encoder_in_tokens.shape[0]
-        ].unsqueeze(1)
+        encoder_in_pos_embed = model.encoder_1d_feature_pos_embed.weight[: encoder_in_tokens.shape[0]].unsqueeze(1)
 
         if cfg.image_features:
             n_cam = cam_features.shape[1]

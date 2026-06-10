@@ -234,8 +234,7 @@ class MetaworldEnv(gym.Env):
         """
         if action.ndim != 1:
             raise ValueError(
-                f"Expected action to be 1-D (shape (action_dim,)), "
-                f"but got shape {action.shape} with ndim={action.ndim}"
+                f"Expected action to be 1-D (shape (action_dim,)), but got shape {action.shape} with ndim={action.ndim}"
             )
         raw_obs, reward, done, truncated, info = self._env.step(action)
 

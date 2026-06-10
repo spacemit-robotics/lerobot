@@ -1775,8 +1775,7 @@ class MultiLeRobotDataset(torch.utils.data.Dataset):
             extra_keys = set(ds.features).difference(intersection_features)
             if extra_keys:
                 logging.warning(
-                    f"keys {extra_keys} of {repo_id} were disabled as they are not contained in all the "
-                    "other datasets."
+                    f"keys {extra_keys} of {repo_id} were disabled as they are not contained in all the other datasets."
                 )
                 self.disabled_features.update(extra_keys)
 

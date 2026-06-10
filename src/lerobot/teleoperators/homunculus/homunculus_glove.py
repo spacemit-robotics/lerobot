@@ -144,8 +144,7 @@ class HomunculusGlove(Teleoperator):
         range_mins, range_maxes = {}, {}
         for finger in ["thumb", "index", "middle", "ring", "pinky"]:
             print(
-                f"\nMove {finger} through its entire range of motion."
-                "\nRecording positions. Press ENTER to stop..."
+                f"\nMove {finger} through its entire range of motion.\nRecording positions. Press ENTER to stop..."
             )
             finger_joints = [joint for joint in self.joints if joint.startswith(finger)]
             finger_mins, finger_maxes = self._record_ranges_of_motion(finger_joints)

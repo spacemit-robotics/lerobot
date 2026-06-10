@@ -454,10 +454,9 @@ def lerobot_dataset_metadata_factory(
             tasks=tasks,
             episodes=episodes,
         )
-        with (
-            patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version_patch,
-            patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download_patch,
-        ):
+        with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version_patch, patch(
+            "lerobot.datasets.lerobot_dataset.snapshot_download"
+        ) as mock_snapshot_download_patch:
             mock_get_safe_version_patch.side_effect = lambda repo_id, version: version
             mock_snapshot_download_patch.side_effect = mock_snapshot_download
 
@@ -541,11 +540,11 @@ def lerobot_dataset_factory(
             tasks=tasks,
             episodes=episodes_metadata,
         )
-        with (
-            patch("lerobot.datasets.lerobot_dataset.LeRobotDatasetMetadata") as mock_metadata_patch,
-            patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version_patch,
-            patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download_patch,
-        ):
+        with patch("lerobot.datasets.lerobot_dataset.LeRobotDatasetMetadata") as mock_metadata_patch, patch(
+            "lerobot.datasets.lerobot_dataset.get_safe_version"
+        ) as mock_get_safe_version_patch, patch(
+            "lerobot.datasets.lerobot_dataset.snapshot_download"
+        ) as mock_snapshot_download_patch:
             mock_metadata_patch.return_value = mock_metadata
             mock_get_safe_version_patch.side_effect = lambda repo_id, version: version
             mock_snapshot_download_patch.side_effect = mock_snapshot_download

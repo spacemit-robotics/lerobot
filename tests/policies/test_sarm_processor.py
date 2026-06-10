@@ -105,10 +105,9 @@ class TestSARMEncodingProcessorStepEndToEnd:
     @pytest.fixture
     def mock_clip_model(self):
         """Mock CLIP model to avoid loading real weights."""
-        with (
-            patch("lerobot.policies.sarm.processor_sarm.CLIPModel") as mock_model_cls,
-            patch("lerobot.policies.sarm.processor_sarm.CLIPProcessor") as mock_processor_cls,
-        ):
+        with patch("lerobot.policies.sarm.processor_sarm.CLIPModel") as mock_model_cls, patch(
+            "lerobot.policies.sarm.processor_sarm.CLIPProcessor"
+        ) as mock_processor_cls:
             mock_model = MagicMock()
 
             def get_image_features_side_effect(**kwargs):

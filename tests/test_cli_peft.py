@@ -53,9 +53,8 @@ def test_peft_training_push_to_hub_works(policy_type, tmp_path):
         upload_folder_contents.update(os.listdir(folder_path))
         return MagicMock()
 
-    with (
-        patch("huggingface_hub.HfApi.create_repo"),
-        patch("huggingface_hub.HfApi.upload_folder", mock_upload_folder),
+    with patch("huggingface_hub.HfApi.create_repo"), patch(
+        "huggingface_hub.HfApi.upload_folder", mock_upload_folder
     ):
         lerobot_train(
             [
@@ -217,11 +216,9 @@ def test_peft_record_loads_policy(policy_type, tmp_path):
 
     # Disable record loop since we're only interested in successful loading of
     # the policy, and disable speech output.
-    with (
-        patch("lerobot.scripts.lerobot_record.make_robot_from_config", dummy_make_robot_from_config),
-        patch("lerobot.scripts.lerobot_record.record_loop", dummy_record_loop),
-        patch("lerobot.utils.utils.say"),
-    ):
+    with patch("lerobot.scripts.lerobot_record.make_robot_from_config", dummy_make_robot_from_config), patch(
+        "lerobot.scripts.lerobot_record.record_loop", dummy_record_loop
+    ), patch("lerobot.utils.utils.say"):
         lerobot_record(
             [
                 f"--policy.path={policy_dir}",

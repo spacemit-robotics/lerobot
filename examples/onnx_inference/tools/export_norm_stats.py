@@ -141,9 +141,7 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="pretrained_model dir (config.json + normalizer safetensors)",
     )
-    default_cal = (
-        Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower/my_awesome_follower_arm.json"
-    )
+    default_cal = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower/my_awesome_follower_arm.json"
     p.add_argument(
         "--calibration",
         type=Path,
@@ -172,10 +170,7 @@ def main() -> None:
     lines = build_lines(args.checkpoint, calibration)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines) + "\n")
-    print(
-        f"[export_norm_stats] wrote {args.output} ({len(lines)} lines, "
-        f"calibration={'yes' if calibration else 'NO'})"
-    )
+    print(f"[export_norm_stats] wrote {args.output} ({len(lines)} lines, calibration={'yes' if calibration else 'NO'})")
 
 
 if __name__ == "__main__":

@@ -261,10 +261,9 @@ def test_aggregate_datasets(tmp_path, lerobot_dataset_factory):
     )
 
     # Mock the revision to prevent Hub calls during dataset loading
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "test_aggr")
         aggr_ds = LeRobotDataset(f"{DUMMY_REPO_ID}_aggr", root=tmp_path / "test_aggr")
@@ -312,10 +311,9 @@ def test_aggregate_with_low_threshold(tmp_path, lerobot_dataset_factory):
     )
 
     # Mock the revision to prevent Hub calls during dataset loading
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "small_aggr")
         aggr_ds = LeRobotDataset(f"{DUMMY_REPO_ID}_small_aggr", root=tmp_path / "small_aggr")
@@ -368,10 +366,9 @@ def test_video_timestamps_regression(tmp_path, lerobot_dataset_factory):
         aggr_root=tmp_path / "regression_aggr",
     )
 
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "regression_aggr")
         aggr_ds = LeRobotDataset(f"{DUMMY_REPO_ID}_regression_aggr", root=tmp_path / "regression_aggr")
@@ -493,10 +490,9 @@ def test_aggregate_image_datasets(tmp_path, lerobot_dataset_factory):
     )
 
     # Load the aggregated dataset
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "image_aggr")
         aggr_ds = LeRobotDataset(f"{DUMMY_REPO_ID}_image_aggr", root=tmp_path / "image_aggr")
@@ -563,10 +559,9 @@ def test_aggregate_already_merged_dataset(tmp_path, lerobot_dataset_factory):
         data_files_size_in_mb=0.01,  # Force file rotation
     )
 
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "ds_ab")
         ds_ab = LeRobotDataset(f"{DUMMY_REPO_ID}_ab", root=tmp_path / "ds_ab")
@@ -591,10 +586,9 @@ def test_aggregate_already_merged_dataset(tmp_path, lerobot_dataset_factory):
         aggr_root=tmp_path / "ds_abc",
     )
 
-    with (
-        patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version,
-        patch("lerobot.datasets.lerobot_dataset.snapshot_download") as mock_snapshot_download,
-    ):
+    with patch("lerobot.datasets.lerobot_dataset.get_safe_version") as mock_get_safe_version, patch(
+        "lerobot.datasets.lerobot_dataset.snapshot_download"
+    ) as mock_snapshot_download:
         mock_get_safe_version.return_value = "v3.0"
         mock_snapshot_download.return_value = str(tmp_path / "ds_abc")
         ds_abc = LeRobotDataset(f"{DUMMY_REPO_ID}_abc", root=tmp_path / "ds_abc")
