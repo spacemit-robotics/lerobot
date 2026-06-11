@@ -30,7 +30,7 @@ sudo apt-get install -y spacemit-onnxruntime python3-spacemit-ort
 ## 构建
 
 ```bash
-cd examples/onnx_inference/cpp
+cd cpp
 mkdir -p build && cd build
 cmake ..
 make -j4
