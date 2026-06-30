@@ -213,7 +213,7 @@ static void PrintUsage(const char* p) {
     "Robot (hardware build):\n"
     "  --port P             SO-101 serial port (default /dev/ttyACM0)\n"
     "  --baud N             Baud rate (default 1000000)\n"
-    "  --cam NAME=IDX       Camera mapping, repeatable (e.g. --cam top=13 --cam wrist=15)\n"
+    "  --camera NAME=IDX    Camera mapping, repeatable (e.g. --camera top=13 --camera wrist=15)\n"
     "  --fps F              Control loop rate (default 30)\n"
     "  --episode-time S     Episode length seconds (default 180)\n"
     "  --n-action-steps N   Actions per predicted chunk (0=stats default)\n"
@@ -252,11 +252,11 @@ static bool ParseArgs(int argc, char** argv, Config& c) {
         else if (a == "-a" || a == "--affinity") c.affinity = next("--affinity");
         else if (a == "--port") c.port = next("--port");
         else if (a == "--baud") c.baud = (uint32_t)stoul(next("--baud"));
-        else if (a == "--cam") {
-            string kv = next("--cam");
+        else if (a == "--camera") {
+            string kv = next("--camera");
             auto pos = kv.find('=');
             if (pos == string::npos) {
-                cerr << "--cam expects NAME=IDX\n";
+                cerr << "--camera expects NAME=IDX\n";
                 return false;
             }
             c.cam_index[kv.substr(0, pos)] = stoi(kv.substr(pos + 1));
@@ -413,7 +413,7 @@ static int RunRobot(const Config& cfg, const Stats& st, OnnxRunner& ort) {
         const string& name = st.cam_names[i];
         auto it = cfg.cam_index.find(name);
         if (it == cfg.cam_index.end()) {
-            cerr << "missing --cam " << name << "=IDX\n";
+            cerr << "missing --camera " << name << "=IDX\n";
             return 2;
         }
         cv::VideoCapture& cap = caps[i];

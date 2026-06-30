@@ -1,19 +1,19 @@
-# Large / regenerable artifacts — do NOT commit
-# vendored riscv64 ORT SDK (~242M)
+# 大型或可再生成文件，不提交到仓库。
+# riscv64 ort sdk 目录。
 cpp/spacemit-ort.riscv64.*/
-# ONNX + PyTorch weights (GBs)
+# onnx / pytorch 权重。
 models/
-# CMake build dirs
+# cmake 构建目录。
 build/
 build_hw/
 cpp/build/
 cpp/build_*/
 __pycache__/
 *.pyc
+debug/
 
-# Test artifacts (regenerable via tools/make_act_test_inputs.py)
+# 测试输入，可通过 tools/make_act_test_inputs.py 重新生成。
 cpp/inputs/*.npy
 ref_*.npy
 
-# NOTE: models/ is ignored above, so the small act_norm_stats.txt (single source
-# of truth for the C++ twin) must be force-added: git add -f .../act_norm_stats.txt
+# models/ 已整体忽略。如需提交 act_norm_stats.txt，需要显式执行 git add -f。

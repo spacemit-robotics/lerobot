@@ -18,17 +18,26 @@ Writes, into <out-dir>:
 
 Run on any host with onnxruntime (CPU is fine):
   python tools/make_act_test_inputs.py \
-        --onnx models/onnx/act-fp32/act.onnx \
-            --stats models/onnx/act-fp32/act_norm_stats.txt \
+      --model-dir models/onnx/act-fp32 \
+      --stats models/onnx/act-fp32/act_norm_stats.txt \
       --out-dir inputs/
 """
 
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
+
+TOOLS_DIR = Path(__file__).resolve().parent
+EXAMPLE_DIR = TOOLS_DIR.parent
+PYTHON_DIR = EXAMPLE_DIR / "python"
+if str(PYTHON_DIR) not in sys.path:
+    sys.path.insert(0, str(PYTHON_DIR))
+
+from utils.act_runtime import resolve_act_model_path  # noqa: E402
 
 MAX_STEP = 4095.0
 
@@ -109,7 +118,7 @@ def norm_to_raw(c, val, clamp=True):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--onnx", required=True, type=Path)
+    p.add_argument("--model-dir", required=True, type=Path)
     p.add_argument("--stats", required=True, type=Path)
     p.add_argument("--out-dir", required=True, type=Path)
     p.add_argument("--seed", type=int, default=0)
@@ -118,6 +127,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    model_path = resolve_act_model_path(args.model_dir)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     st = parse_stats(args.stats)
 
@@ -148,7 +158,7 @@ def main():
 
     import onnxruntime as ort
 
-    sess = ort.InferenceSession(str(args.onnx), providers=["CPUExecutionProvider"])
+    sess = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
     in_names = [i.name for i in sess.get_inputs()]
     out_names = [o.name for o in sess.get_outputs()]
     feeds = {}

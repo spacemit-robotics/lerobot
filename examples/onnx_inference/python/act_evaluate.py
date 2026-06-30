@@ -22,10 +22,10 @@ This mirrors the reference command:
 
 Example:
     python act_evaluate.py \
-        --onnx models/onnx/act-fp32/act.onnx \
+        --model-dir models/onnx/act-fp32 \
         --checkpoint models/pytorch/act/checkpoints/100000/pretrained_model \
         --port /dev/ttyACM0 \
-        --cam top=15 --cam wrist=13 \
+        --camera top=15 --camera wrist=13 \
         --task "Place the green cube into the box" \
         --episode-time 180 --fps 30
 
@@ -44,7 +44,11 @@ from pathlib import Path
 
 import numpy as np
 from utils import safe_disconnect, suspend_sigint
-from utils.act_runtime import build_session as build_ort_session
+from utils.act_runtime import (
+    build_session as build_ort_session,
+    resolve_act_model_path,
+    resolve_spacemit_ep_library,
+)
 
 EXAMPLE_DIR = Path(__file__).resolve().parent
 
@@ -285,12 +289,12 @@ def _report(inference_ms, loop_ms, steps):
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
-def _parse_cam(values: list[str]) -> dict[str, int]:
-    """--cam name=index pairs -> {name: index}."""
+def _parse_camera(values: list[str]) -> dict[str, int]:
+    """--camera name=index pairs -> {name: index}."""
     out: dict[str, int] = {}
     for v in values or []:
         if "=" not in v:
-            raise argparse.ArgumentTypeError(f"--cam expects name=index, got '{v}'")
+            raise argparse.ArgumentTypeError(f"--camera expects name=index, got '{v}'")
         name, idx = v.split("=", 1)
         out[name.strip()] = int(idx)
     return out
@@ -299,7 +303,9 @@ def _parse_cam(values: list[str]) -> dict[str, int]:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Real-robot ONNX ACT control (SO-101).")
     # model / stats
-    p.add_argument("--onnx", type=Path, required=True, help="Path to act.onnx")
+    p.add_argument(
+        "--model-dir", type=Path, required=True, help="Directory containing act.onnx or act.q.onnx"
+    )
     p.add_argument(
         "--checkpoint",
         type=Path,
@@ -312,17 +318,17 @@ def parse_args() -> argparse.Namespace:
         "--robot-id", default="my_awesome_follower_arm", help="Robot id (selects the calibration file)"
     )
     p.add_argument(
-        "--cam",
+        "--camera",
         action="append",
         metavar="NAME=INDEX",
-        help="Camera mapping, e.g. --cam top=13 --cam wrist=15 "
+        help="Camera mapping, e.g. --camera top=13 --camera wrist=15 "
         "(must cover all VISUAL features; default top=13 wrist=15)",
     )
     p.add_argument("--width", type=int, default=640)
     p.add_argument("--height", type=int, default=480)
     p.add_argument("--fourcc", default="MJPG")
     p.add_argument(
-        "--cam-fps",
+        "--camera-fps",
         type=int,
         default=30,
         help="Camera capture fps. Keep this at a camera-supported value, "
@@ -330,7 +336,10 @@ def parse_args() -> argparse.Namespace:
     )
     # control loop
     p.add_argument(
-        "--fps", type=float, default=30.0, help="Action playback/control frequency. Independent of --cam-fps."
+        "--fps",
+        type=float,
+        default=30.0,
+        help="Action playback/control frequency. Independent of --camera-fps.",
     )
     p.add_argument("--episode-time", type=float, default=180.0, help="seconds")
     p.add_argument(
@@ -341,7 +350,17 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--task", default="", help="Task description (logging only)")
     # ONNX runtime
-    p.add_argument("--use-spacemit-ep", action="store_true")
+    p.set_defaults(use_spacemit_ep=True)
+    p.add_argument(
+        "--use-spacemit-ep", dest="use_spacemit_ep", action="store_true", help="Use SpaceMIT EP (default)"
+    )
+    p.add_argument("--cpu", dest="use_spacemit_ep", action="store_false", help="Run ONNX with CPU EP")
+    p.add_argument(
+        "--spacemit-ort-dir",
+        type=Path,
+        default=None,
+        help="SpaceMIT ORT SDK directory; omit to use the system SpaceMIT EP",
+    )
     p.add_argument("--ep-threads", type=int, default=8)
     p.add_argument("--ep-affinity", default="8;9;10;11;12;13;14;15")
     p.add_argument("--cpu-threads", type=int, default=0, help="0 = ORT default")
@@ -351,7 +370,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    cam_map = _parse_cam(args.cam) if args.cam else {"top": 13, "wrist": 15}
+    model_path = resolve_act_model_path(args.model_dir)
+    cam_map = _parse_camera(args.camera) if args.camera else {"top": 13, "wrist": 15}
 
     meta = read_act_meta(args.checkpoint)
     stats = load_norm_stats(args.checkpoint, meta)
@@ -361,19 +381,28 @@ def main() -> None:
     )
     missing = [c for c in meta["cam_names"] if c not in cam_map]
     if missing:
-        raise SystemExit(f"Missing --cam mapping for camera(s): {missing}")
+        raise SystemExit(f"Missing --camera mapping for camera(s): {missing}")
 
+    spacemit_ep_library = resolve_spacemit_ep_library(args.spacemit_ort_dir)
     sess, session_ms = build_ort_session(
-        args.onnx, args.use_spacemit_ep, args.ep_threads, args.ep_affinity, args.cpu_threads
+        model_path,
+        args.use_spacemit_ep,
+        args.ep_threads,
+        args.ep_affinity,
+        args.cpu_threads,
+        spacemit_ep_library,
     )
     in_names = [i.name for i in sess.get_inputs()]
     out_names = [o.name for o in sess.get_outputs()]
     print(
         f"[ACT ONNX] ONNX inputs={in_names} outputs={out_names} "
-        f"provider={'SpaceMIT EP' if args.use_spacemit_ep else 'CPU'} load={session_ms:.1f}ms"
+        f"model={model_path} provider={'SpaceMIT EP' if args.use_spacemit_ep else 'CPU'} "
+        f"load={session_ms:.1f}ms"
     )
 
-    robot = build_robot(args.port, args.robot_id, cam_map, args.width, args.height, args.cam_fps, args.fourcc)
+    robot = build_robot(
+        args.port, args.robot_id, cam_map, args.width, args.height, args.camera_fps, args.fourcc
+    )
     print(f"[ACT ONNX] connecting robot on {args.port} (id={args.robot_id}) ...")
     try:
         robot.connect()
