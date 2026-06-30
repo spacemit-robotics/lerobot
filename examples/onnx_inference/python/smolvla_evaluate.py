@@ -728,19 +728,27 @@ def main() -> int:  # noqa: C901
 
             images_list = []
             reference_img = None
-            for image_key in runtime.image_keys:
+            required_image_keys = runtime.image_keys[:model_camera_count]
+            missing_image_keys = []
+            for image_key in required_image_keys:
                 img = mapped_images.get(image_key)
                 if img is None:
+                    missing_image_keys.append(image_key)
                     continue
                 img = img.unsqueeze(0)
                 img = _resize_with_pad(img, *runtime.resize_hw, pad_value=0)
                 img = img * 2.0 - 1.0
                 reference_img = img
                 images_list.append(img)
+            if missing_image_keys:
+                available_image_keys = sorted(mapped_images)
+                raise ValueError(
+                    "Missing camera image(s): "
+                    + ", ".join(missing_image_keys)
+                    + f"; available={available_image_keys}"
+                )
             if not images_list:
                 raise ValueError("No camera images found in observation")
-            if len(images_list) > model_camera_count:
-                images_list = images_list[:model_camera_count]
             while len(images_list) < model_camera_count:
                 images_list.append(torch.ones_like(reference_img) * -1)
             images = torch.stack(images_list, dim=1)

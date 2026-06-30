@@ -289,39 +289,39 @@ string require_value(int& i, int argc, char* argv[], const string& flag) {
 
 void print_usage(const char* prog) {
     cout << "Usage: " << prog << " [options]\n"
-         << "  --model-dir DIR       ONNX model directory\n"
-         << "  --runtime FILE        SmolVLA runtime metadata from export_smolvla_runtime.py\n"
-         << "  --port P              SO-101 serial port (default /dev/ttyACM0)\n"
-         << "  --camera NAME=IDX     Camera mapping, e.g. --camera top=15 --camera wrist=13\n"
-         << "  --fps F               Control loop target FPS (default 30)\n"
-         << "  --episode-time S      Seconds to run (default 60)\n"
-         << "  --max-iters N         Hard loop cap\n"
-         << "  --denoise-steps N     Denoise steps per chunk (default 10)\n"
-         << "  --n-action-steps N    Actions to enqueue from each inferred chunk (default runtime metadata)\n"
-         << "  --seed N              Denoise noise seed shared with the Python runner (default 0)\n"
-         << "  --warmup N            Synthetic warmup chunks before hardware loop\n"
-         << "  --warmup-only         Run synthetic warmup and exit before hardware loop\n"
-         << "  --use-spacemit-ep     Enable SpaceMIT EP (default)\n"
-         << "  --cpu                 CPU only\n"
-         << "  --prefill-ep          Run prefill on EP (default with --use-spacemit-ep)\n"
-         << "  --cpu-prefill         Run prefill on CPU even when --use-spacemit-ep is enabled\n"
-         << "  --no-prefill-iobind   Run prefill EP session through plain Session.Run for diagnostics\n"
-         << "  --denoise-ep          Run denoise on EP (default with --use-spacemit-ep)\n"
-         << "  --cpu-denoise         Run denoise on CPU even when --use-spacemit-ep is enabled\n"
-         << "  --cpu-vision          Run vision_encoder on CPU\n"
-         << "  --cpu-connector       Run connector on CPU\n"
-         << "  --ep-threads N        SpaceMIT EP thread count\n"
-         << "  --ep-affinity LIST    SpaceMIT EP affinity\n"
-         << "  --global-ep-pool      Use one global shared SpaceMIT EP thread pool\n"
-         << "  --per-camera-vision   Run vision/connector once per camera like the Python evaluator\n"
-         << "  --dry-run             Compute actions but do not command motors\n"
-         << "  --no-motors           Do not open motors; use zero normalized state for diagnostics\n"
-         << "  --cpu-shadow-correct  Run all requested EP sessions, then correct action with CPU shadow if EP diverges\n"
-         << "  --shadow-action-tol X Max allowed unnormalized action diff before CPU correction (default 1)\n"
-         << "  --print-actions       Print each action sent\n"
-         << "  --infer-every-tick    Recompute a full action chunk every loop iteration\n"
-         << "  --debug-numerics      Print tensor finite/min/max summaries\n"
-         << "  --disable-graph-opt   Disable ORT graph optimization\n";
+        << "  --model-dir DIR       ONNX model directory\n"
+        << "  --runtime FILE        SmolVLA runtime metadata from export_smolvla_runtime.py\n"
+        << "  --port P              SO-101 serial port (default /dev/ttyACM0)\n"
+        << "  --camera NAME=IDX     Camera mapping, e.g. --camera top=15 --camera wrist=13\n"
+        << "  --fps F               Control loop target FPS (default 30)\n"
+        << "  --episode-time S      Seconds to run (default 60)\n"
+        << "  --max-iters N         Hard loop cap\n"
+        << "  --denoise-steps N     Denoise steps per chunk (default 10)\n"
+        << "  --n-action-steps N    Actions to enqueue from each inferred chunk (default runtime metadata)\n"
+        << "  --seed N              Denoise noise seed shared with the Python runner (default 0)\n"
+        << "  --warmup N            Synthetic warmup chunks before hardware loop\n"
+        << "  --warmup-only         Run synthetic warmup and exit before hardware loop\n"
+        << "  --use-spacemit-ep     Enable SpaceMIT EP (default)\n"
+        << "  --cpu                 CPU only\n"
+        << "  --prefill-ep          Run prefill on EP (default with --use-spacemit-ep)\n"
+        << "  --cpu-prefill         Run prefill on CPU even when --use-spacemit-ep is enabled\n"
+        << "  --no-prefill-iobind   Run prefill EP session through plain Session.Run for diagnostics\n"
+        << "  --denoise-ep          Run denoise on EP (default with --use-spacemit-ep)\n"
+        << "  --cpu-denoise         Run denoise on CPU even when --use-spacemit-ep is enabled\n"
+        << "  --cpu-vision          Run vision_encoder on CPU\n"
+        << "  --cpu-connector       Run connector on CPU\n"
+        << "  --ep-threads N        SpaceMIT EP thread count\n"
+        << "  --ep-affinity LIST    SpaceMIT EP affinity\n"
+        << "  --global-ep-pool      Use one global shared SpaceMIT EP thread pool\n"
+        << "  --per-camera-vision   Run vision/connector once per camera like the Python evaluator\n"
+        << "  --dry-run             Compute actions but do not command motors\n"
+        << "  --no-motors           Do not open motors; use zero normalized state for diagnostics\n"
+        << "  --cpu-shadow-correct  Run all requested EP sessions, then correct action with CPU shadow if EP diverges\n"
+        << "  --shadow-action-tol X Max allowed unnormalized action diff before CPU correction (default 1)\n"
+        << "  --print-actions       Print each action sent\n"
+        << "  --infer-every-tick    Recompute a full action chunk every loop iteration\n"
+        << "  --debug-numerics      Print tensor finite/min/max summaries\n"
+        << "  --disable-graph-opt   Disable ORT graph optimization\n";
 }
 
 Args parse_args(int argc, char* argv[]) {
@@ -565,12 +565,12 @@ void print_tensor_stats(const string& name, const float* data, size_t n) {
     }
     const size_t good = n - bad;
     cout << "[num] " << name
-         << " n=" << n
-         << " bad=" << bad;
+        << " n=" << n
+        << " bad=" << bad;
     if (good > 0) {
         cout << " min=" << fixed << setprecision(6) << min_v
-             << " max=" << max_v
-             << " mean=" << (sum / static_cast<double>(good));
+            << " max=" << max_v
+            << " mean=" << (sum / static_cast<double>(good));
     }
     cout << "\n";
 }
@@ -579,9 +579,9 @@ void print_bool_stats(const string& name, const bool* data, size_t n) {
     size_t true_count = 0;
     for (size_t i = 0; i < n; ++i) if (data[i]) ++true_count;
     cout << "[num] " << name
-         << " n=" << n
-         << " true=" << true_count
-         << " false=" << (n - true_count) << "\n";
+        << " n=" << n
+        << " true=" << true_count
+        << " false=" << (n - true_count) << "\n";
 }
 
 float max_abs_diff(const vector<float>& a, const vector<float>& b) {
@@ -636,14 +636,14 @@ class SmolVLAPipeline {
 public:
     SmolVLAPipeline(const Args& args, const RuntimeMeta& meta)
         : args_(args),
-          meta_(meta),
-          env_(ORT_LOGGING_LEVEL_WARNING, "smolvla_evaluate"),
-          mem_(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault)),
-          vision_(env_, args.model_dir + "/vision_encoder.onnx", make_opts(args, args.vision_ep)),
-          connector_(env_, args.model_dir + "/connector.onnx", make_opts(args, args.connector_ep)),
-          prefill_(env_, args.model_dir + "/prefill_lm.onnx", make_opts(args, args.prefill_ep)),
-          denoise_(env_, args.model_dir + "/denoise_step.onnx", make_opts(args, args.denoise_ep)),
-          rng_(args.seed) {
+        meta_(meta),
+        env_(ORT_LOGGING_LEVEL_WARNING, "smolvla_evaluate"),
+        mem_(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault)),
+        vision_(env_, args.model_dir + "/vision_encoder.onnx", make_opts(args, args.vision_ep)),
+        connector_(env_, args.model_dir + "/connector.onnx", make_opts(args, args.connector_ep)),
+        prefill_(env_, args.model_dir + "/prefill_lm.onnx", make_opts(args, args.prefill_ep)),
+        denoise_(env_, args.model_dir + "/denoise_step.onnx", make_opts(args, args.denoise_ep)),
+        rng_(args.seed) {
         auto vision_shape = vision_.input_shape(0);
         auto prefill_shape = prefill_.input_shape(0);
         expected_image_tokens_ = prefill_shape.at(1);
@@ -675,13 +675,13 @@ public:
             throw runtime_error("--per-camera-vision requires a dynamic or batch-1 vision input");
         }
         cout << "[smolvla] camera_count=" << camera_count_
-             << " expected_image_tokens=" << expected_image_tokens_
-             << " vision_mode=" << (batched_vision_ ? "batched" : "per-camera")
-             << " vision=" << (args.vision_ep && args.use_spacemit_ep ? "EP" : "CPU")
-             << " connector=" << (args.connector_ep && args.use_spacemit_ep ? "EP" : "CPU")
-             << " prefill=" << (args.prefill_ep && args.use_spacemit_ep ? "EP" : "CPU")
-             << " denoise=" << (args.denoise_ep && args.use_spacemit_ep ? "EP" : "CPU")
-             << "\n";
+            << " expected_image_tokens=" << expected_image_tokens_
+            << " vision_mode=" << (batched_vision_ ? "batched" : "per-camera")
+            << " vision=" << (args.vision_ep && args.use_spacemit_ep ? "EP" : "CPU")
+            << " connector=" << (args.connector_ep && args.use_spacemit_ep ? "EP" : "CPU")
+            << " prefill=" << (args.prefill_ep && args.use_spacemit_ep ? "EP" : "CPU")
+            << " denoise=" << (args.denoise_ep && args.use_spacemit_ep ? "EP" : "CPU")
+            << "\n";
     }
 
     int camera_count() const { return camera_count_; }
@@ -942,8 +942,8 @@ int run_robot(
     const int physical_camera_count = min(camera_count, static_cast<int>(camera_names.size()));
     if (camera_count > physical_camera_count) {
         cout << "[robot] model expects " << camera_count
-             << " camera slots; using " << physical_camera_count
-             << " configured camera(s) and filling remaining slot(s) with empty images\n";
+            << " camera slots; using " << physical_camera_count
+            << " configured camera(s) and filling remaining slot(s) with empty images\n";
     }
 
     vector<cv::VideoCapture> caps(physical_camera_count);
@@ -986,10 +986,10 @@ int run_robot(
             return 2;
         }
         cout << "[robot] " << meta.state_dim << " motors on " << args.port
-             << (args.dry_run ? " (DRY-RUN)" : "") << "\n";
+            << (args.dry_run ? " (DRY-RUN)" : "") << "\n";
     } else {
         cout << "[robot] motors disabled; using zero normalized state"
-             << (args.dry_run ? " (DRY-RUN)" : "") << "\n";
+            << (args.dry_run ? " (DRY-RUN)" : "") << "\n";
     }
 
     const int n_steps = min(args.n_action_steps > 0 ? args.n_action_steps : meta.n_action_steps, meta.chunk_size);
@@ -1056,15 +1056,15 @@ int run_robot(
                 queue.push_back(move(action));
             }
             cout << "[iter " << setw(3) << iter << "] infer="
-                 << fixed << setprecision(1)
-                 << (result.vision_ms + result.connector_ms + result.prefill_ms + result.denoise_ms)
-                 << " ms  v=" << result.vision_ms
-                 << " c=" << result.connector_ms
-                 << " pf=" << result.prefill_ms
-                 << " dn=" << result.denoise_ms;
+                << fixed << setprecision(1)
+                << (result.vision_ms + result.connector_ms + result.prefill_ms + result.denoise_ms)
+                << " ms  v=" << result.vision_ms
+                << " c=" << result.connector_ms
+                << " pf=" << result.prefill_ms
+                << " dn=" << result.denoise_ms;
             if (cpu_shadow_pipe != nullptr) {
                 cout << " shadow_diff=" << shadow_diff
-                     << (used_shadow ? " corrected=CPU" : " corrected=no");
+                    << (used_shadow ? " corrected=CPU" : " corrected=no");
             }
             cout << "\n";
         }
@@ -1127,8 +1127,8 @@ int main(int argc, char* argv[]) {
         if (args.use_spacemit_ep) set_spacemit_ep_env_defaults();
         RuntimeMeta meta = parse_runtime_meta(args.runtime);
         cout << "[smolvla_evaluate] model_dir=" << args.model_dir
-             << " runtime=" << args.runtime
-             << " task=\"" << meta.task << "\"\n";
+            << " runtime=" << args.runtime
+            << " task=\"" << meta.task << "\"\n";
         SmolVLAPipeline pipe(args, meta);
         unique_ptr<SmolVLAPipeline> cpu_shadow_pipe;
         if (args.cpu_shadow_correct) {
@@ -1139,7 +1139,7 @@ int main(int argc, char* argv[]) {
             cpu_args.prefill_ep = false;
             cpu_args.denoise_ep = false;
             cout << "[smolvla_evaluate] CPU shadow correction enabled, tol="
-                 << args.shadow_action_tol << "\n";
+                << args.shadow_action_tol << "\n";
             cpu_shadow_pipe = make_unique<SmolVLAPipeline>(cpu_args, meta);
         }
         for (int i = 0; i < args.warmup; ++i) {
@@ -1150,8 +1150,8 @@ int main(int argc, char* argv[]) {
                 cout << "[warmup " << i << "] action=[";
                 for (int j = 0; j < meta.action_dim; ++j) {
                     cout << fixed << setprecision(6)
-                         << warmup_result.actions[static_cast<size_t>(j)]
-                         << (j + 1 < meta.action_dim ? "," : "");
+                        << warmup_result.actions[static_cast<size_t>(j)]
+                        << (j + 1 < meta.action_dim ? "," : "");
                 }
                 cout << "]\n";
             }
