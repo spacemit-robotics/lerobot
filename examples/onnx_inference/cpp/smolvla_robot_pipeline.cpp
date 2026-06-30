@@ -26,6 +26,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "onnxruntime_cxx_api.h"
@@ -38,8 +39,39 @@ extern "C" {
 }
 #endif
 
-using namespace std;
-using namespace std::chrono;
+using std::cerr;
+using std::condition_variable;
+using std::copy;
+using std::cout;
+using std::exception;
+using std::fill;
+using std::fixed;
+using std::function;
+using std::ifstream;
+using std::invalid_argument;
+using std::istringstream;
+using std::make_unique;
+using std::map;
+using std::max;
+using std::min;
+using std::move;
+using std::mutex;
+using std::runtime_error;
+using std::setprecision;
+using std::setw;
+using std::stoi;
+using std::string;
+using std::thread;
+using std::this_thread::sleep_for;
+using std::to_string;
+using std::unique_lock;
+using std::unique_ptr;
+using std::unordered_map;
+using std::vector;
+using std::chrono::duration;
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::steady_clock;
 
 namespace {
 
@@ -1103,7 +1135,7 @@ int run_robot(
         }
 
         double dt = duration_cast<duration<double>>(steady_clock::now() - loop_start).count();
-        if (period > dt) this_thread::sleep_for(duration<double>(period - dt));
+        if (period > dt) sleep_for(duration<double>(period - dt));
     }
 
     if (!args.no_motors) {

@@ -14,12 +14,16 @@ set_property(CACHE SPACEMIT_EP PROPERTY STRINGS SYSTEM EP203 EP203_REF)
 set(SPACEMIT_ORT_DIR "" CACHE PATH "Override ONNX Runtime / SpaceMIT EP SDK root")
 
 set(_ORT_HINT_DIRS "")
+set(_ORT_FIND_MODE)
 if(SPACEMIT_ORT_DIR)
   list(APPEND _ORT_HINT_DIRS "${SPACEMIT_ORT_DIR}")
+  list(APPEND _ORT_FIND_MODE NO_DEFAULT_PATH)
 elseif(SPACEMIT_EP STREQUAL "EP203")
   list(APPEND _ORT_HINT_DIRS "$ENV{HOME}/spacemit-ort.riscv64.2.0.3_yyx")
+  list(APPEND _ORT_FIND_MODE NO_DEFAULT_PATH)
 elseif(SPACEMIT_EP STREQUAL "EP203_REF")
   list(APPEND _ORT_HINT_DIRS "$ENV{HOME}/spacemit-ort.riscv64.2.0.3_yyx_ref")
+  list(APPEND _ORT_FIND_MODE NO_DEFAULT_PATH)
 elseif(SPACEMIT_EP STREQUAL "SYSTEM")
   message(STATUS "Using system ONNX Runtime")
 else()
@@ -30,25 +34,25 @@ find_path(ONNXRUNTIME_INCLUDE_DIR onnxruntime_cxx_api.h
   HINTS ${_ORT_HINT_DIRS}
   PATH_SUFFIXES include include/onnxruntime
   PATHS /usr/local/include/onnxruntime /usr/local/include /usr/include/onnxruntime /usr/include
-  NO_DEFAULT_PATH)
+  ${_ORT_FIND_MODE})
 
 find_path(SPACEMIT_EP_INCLUDE_DIR spacemit_ort_env.h
   HINTS ${_ORT_HINT_DIRS}
   PATH_SUFFIXES include include/onnxruntime
   PATHS /usr/local/include/onnxruntime /usr/local/include /usr/include/onnxruntime /usr/include
-  NO_DEFAULT_PATH)
+  ${_ORT_FIND_MODE})
 
 find_library(ONNXRUNTIME_LIB onnxruntime
   HINTS ${_ORT_HINT_DIRS}
   PATH_SUFFIXES lib lib64
   PATHS /usr/local/lib /usr/lib/riscv64-linux-gnu /usr/lib /lib/riscv64-linux-gnu /lib
-  NO_DEFAULT_PATH)
+  ${_ORT_FIND_MODE})
 
 find_library(SPACEMIT_EP_LIB spacemit_ep
   HINTS ${_ORT_HINT_DIRS}
   PATH_SUFFIXES lib lib64
   PATHS /usr/local/lib /usr/lib/riscv64-linux-gnu /usr/lib /lib/riscv64-linux-gnu /lib
-  NO_DEFAULT_PATH)
+  ${_ORT_FIND_MODE})
 
 if(NOT ONNXRUNTIME_INCLUDE_DIR OR NOT SPACEMIT_EP_INCLUDE_DIR OR NOT ONNXRUNTIME_LIB OR NOT SPACEMIT_EP_LIB)
   message(FATAL_ERROR
