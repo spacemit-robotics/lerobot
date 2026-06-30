@@ -5,9 +5,10 @@ Use this to measure ACT ONNX inference latency on CPU or SpaceMIT EP.
 
 Example:
   python python/act_benchmark.py \
-      --onnx models/onnx/act-fp32/act.onnx \
+      --model-dir models/onnx/act-fp32 \
       --checkpoint models/pytorch/act/checkpoints/100000/pretrained_model \
       --use-spacemit-ep \
+      --spacemit-ort-dir ~/spacemit-ort.riscv64.2.0.3_yyx \
       --ep-threads 8 \
       --ep-affinity "8;9;10;11;12;13;14;15" \
       --warmup 5 --iters 20
@@ -28,20 +29,35 @@ try:
 except ImportError:
     safetensors = None
 
-from utils.act_runtime import build_session as build_ort_session, random_float
+from utils.act_runtime import (
+    build_session as build_ort_session,
+    random_float,
+    resolve_act_model_path,
+    resolve_spacemit_ep_library,
+)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark ACT ONNX inference latency")
-    parser.add_argument("--onnx", type=Path, required=True, help="Path to ACT ONNX model")
+    parser.add_argument(
+        "--model-dir", type=Path, required=True, help="Directory containing act.onnx or act.q.onnx"
+    )
     parser.add_argument(
         "--checkpoint",
         type=Path,
         required=True,
         help="Path to pretrained_model dir for config and normalization stats",
     )
+    parser.set_defaults(use_spacemit_ep=True)
     parser.add_argument(
-        "--use-spacemit-ep", action="store_true", help="Use SpaceMITExecutionProvider if available"
+        "--use-spacemit-ep", dest="use_spacemit_ep", action="store_true", help="Use SpaceMIT EP (default)"
+    )
+    parser.add_argument("--cpu", dest="use_spacemit_ep", action="store_false", help="Run ONNX with CPU EP")
+    parser.add_argument(
+        "--spacemit-ort-dir",
+        type=Path,
+        default=None,
+        help="SpaceMIT ORT SDK directory; omit to use the system SpaceMIT EP",
     )
     parser.add_argument("--ep-threads", type=int, default=8, help="SpaceMIT EP intra thread count")
     parser.add_argument(
@@ -137,8 +153,9 @@ def run_benchmark(session: ort.InferenceSession, feeds: dict, warmup: int, iters
 
 def main() -> None:
     args = parse_args()
+    model_path = resolve_act_model_path(args.model_dir)
     print("ACT ONNX benchmark")
-    print("model:", args.onnx)
+    print("model:", model_path)
     print("checkpoint:", args.checkpoint)
     print("use_spacemit_ep:", args.use_spacemit_ep)
     print("ep_threads:", args.ep_threads)
@@ -153,14 +170,16 @@ def main() -> None:
     print("Checkpoint meta:", meta)
     print("Loaded normalization stats")
 
+    spacemit_ep_library = resolve_spacemit_ep_library(args.spacemit_ort_dir)
     session, load_ms = build_ort_session(
-        args.onnx,
+        model_path,
         args.use_spacemit_ep,
         args.ep_threads,
         args.ep_affinity,
         args.cpu_threads,
+        spacemit_ep_library,
     )
-    print("Loaded", args.onnx.name, f"in {load_ms:.0f} ms", "providers=", session.get_providers())
+    print("Loaded", model_path.name, f"in {load_ms:.0f} ms", "providers=", session.get_providers())
     feeds = build_random_inputs(session, args.batch)
     print("Input tensors:", {k: v.shape for k, v in feeds.items()})
 

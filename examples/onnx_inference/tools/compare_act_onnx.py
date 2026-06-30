@@ -13,22 +13,23 @@ PyTorch run elsewhere use identical tensors.
 
 Usage:
   # ONNX only (works on K3 without torch)
-    python compare_act_onnx.py --onnx models/onnx/act-fp32/act.onnx \
+    python compare_act_onnx.py --model-dir models/onnx/act-fp32 \
       --checkpoint models/pytorch/<run>/checkpoints/100000/pretrained_model
 
   # Force SpaceMIT EP on K3
-    python compare_act_onnx.py --onnx models/onnx/act-fp32/act.onnx \
+    python compare_act_onnx.py --model-dir models/onnx/act-fp32 \
       --checkpoint <ckpt> --use-spacemit-ep
 
   # Also run the PyTorch reference and compare (needs torch)
-    python compare_act_onnx.py --onnx models/onnx/act-fp32/act.onnx \
-      --checkpoint <ckpt> --with-torch
+    python compare_act_onnx.py --model-dir models/onnx/act-fp32 \
+      --checkpoint <ckpt> --cpu --with-torch
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -39,6 +40,15 @@ import onnxruntime as ort
 # ``act_pytorch_to_onnx.py`` (which provides ``ACTInferenceModule``).
 TOOLS_DIR = Path(__file__).resolve().parent
 EXAMPLE_DIR = TOOLS_DIR.parent
+PYTHON_DIR = EXAMPLE_DIR / "python"
+if str(PYTHON_DIR) not in sys.path:
+    sys.path.insert(0, str(PYTHON_DIR))
+
+from utils.act_runtime import (  # noqa: E402
+    build_session as build_ort_session,
+    resolve_act_model_path,
+    resolve_spacemit_ep_library,
+)
 
 
 def read_act_config(checkpoint: Path) -> dict:
@@ -72,33 +82,6 @@ def make_fixed_inputs(meta: dict, seed: int = 0, batch_size: int = 1) -> dict[st
     if meta["state_dim"]:
         inputs["state"] = rng.standard_normal((batch_size, meta["state_dim"]), dtype=np.float32)
     return inputs
-
-
-def build_session(
-    onnx_path: Path, use_spacemit_ep: bool, ep_threads: int = 4, ep_affinity: str = "", cpu_threads: int = 0
-) -> ort.InferenceSession:
-    so = ort.SessionOptions()
-    so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-    if cpu_threads > 0:
-        so.intra_op_num_threads = cpu_threads
-    providers: list = ["CPUExecutionProvider"]
-    provider_options = None
-    if use_spacemit_ep:
-        try:
-            import spacemit_ort  # noqa: F401  # registers SpaceMITExecutionProvider
-        except ImportError:
-            print("[warn] spacemit_ort not importable; falling back to CPU")
-        else:
-            providers = ["SpaceMITExecutionProvider", "CPUExecutionProvider"]
-            ep_opt = {"SPACEMIT_EP_INTRA_THREAD_NUM": str(ep_threads)}
-            if ep_affinity:
-                ep_opt["SPACEMIT_EP_INTRA_THREAD_AFFINITY"] = ep_affinity
-            provider_options = [ep_opt, {}]
-    sess = ort.InferenceSession(
-        str(onnx_path), sess_options=so, providers=providers, provider_options=provider_options
-    )
-    print(f"[onnx] providers={sess.get_providers()}")
-    return sess
 
 
 def run_onnx(sess: ort.InferenceSession, inputs: dict[str, np.ndarray], warmup: int, repeat: int):
@@ -164,7 +147,9 @@ def parse_args() -> argparse.Namespace:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("--onnx", type=Path, required=True, help="Path to act.onnx")
+    p.add_argument(
+        "--model-dir", type=Path, required=True, help="Directory containing act.onnx or act.q.onnx"
+    )
     p.add_argument(
         "--checkpoint",
         type=Path,
@@ -180,7 +165,17 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--batch-size", type=int, default=1)
     p.add_argument("--warmup", type=int, default=2)
     p.add_argument("--repeat", type=int, default=10)
-    p.add_argument("--use-spacemit-ep", action="store_true", help="Prefer SpaceMIT EP on K3")
+    p.set_defaults(use_spacemit_ep=True)
+    p.add_argument(
+        "--use-spacemit-ep", dest="use_spacemit_ep", action="store_true", help="Use SpaceMIT EP (default)"
+    )
+    p.add_argument("--cpu", dest="use_spacemit_ep", action="store_false", help="Run ONNX with CPU EP")
+    p.add_argument(
+        "--spacemit-ort-dir",
+        type=Path,
+        default=None,
+        help="SpaceMIT ORT SDK directory; omit to use the system SpaceMIT EP",
+    )
     p.add_argument("--ep-threads", type=int, default=4, help="SpaceMIT EP intra thread count")
     p.add_argument("--ep-affinity", default="", help="SpaceMIT EP core affinity, e.g. '8;9;10;11'")
     p.add_argument(
@@ -219,6 +214,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    model_path = resolve_act_model_path(args.model_dir)
     meta = read_act_config(args.checkpoint)
     print(
         f"[config] cameras={len(meta['image_features'])} state={meta['state_dim']} "
@@ -236,13 +232,16 @@ def main() -> int:
             np.save(out_path, np.ascontiguousarray(arr, dtype=np.float32))
             print(f"[input] saved -> {out_path}")
 
-    sess = build_session(
-        args.onnx,
+    spacemit_ep_library = resolve_spacemit_ep_library(args.spacemit_ort_dir)
+    sess, _load_ms = build_ort_session(
+        model_path,
         args.use_spacemit_ep,
         args.ep_threads,
         args.ep_affinity,
         args.cpu_threads,
+        spacemit_ep_library,
     )
+    print(f"[onnx] model={model_path} providers={sess.get_providers()}")
     onnx_out = run_onnx(sess, inputs, args.warmup, args.repeat)
 
     ref = None

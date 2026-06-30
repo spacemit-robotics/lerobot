@@ -1,0 +1,18 @@
+# ACT onnx pc export, quantization, and comparison dependencies.
+#
+# install from examples/onnx_inference on pc:
+#   pip install -r requirements-act-pc.txt
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.7.1+cpu
+torchvision==0.22.1+cpu
+wandb==0.24.0
+pyarrow==23.0.0
+-e ../../[feetech]
+
+numpy>=2.0.0,<2.3.0
+onnx>=1.16.0,<2.0.0
+onnxruntime>=1.16.0,<2.0.0
+safetensors>=0.4.3,<1.0.0
+xslim
