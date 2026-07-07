@@ -13,7 +13,7 @@ Default configuration:
   --camera top=15 --camera wrist=13
   --use-spacemit-ep --ep-threads 8 --ep-affinity "8;9;10;11;12;13;14;15"
   --denoise-steps 10 --episode-time 60 --print-actions --global-ep-pool
-  --spacemit-ort-dir ~/spacemit-ort.riscv64.2.0.3_yyx
+  --spacemit-ort-dir ~/spacemit-ort.riscv64.2.0.4_yyx
 
 Camera mapping examples:
   --camera top=15 --camera wrist=13
@@ -30,7 +30,7 @@ EOF
 model_dir_arg="${MODEL_DIR:-models/onnx/smolvla-fp16-surgeried}"
 runtime_arg="${RUNTIME:-models/onnx/smolvla_runtime.txt}"
 port_arg="${PORT:-/dev/ttyACM0}"
-spacemit_ort_dir_arg="${SPACEMIT_ORT_DIR:-$HOME/spacemit-ort.riscv64.2.0.3_yyx}"
+spacemit_ort_dir_arg="${SPACEMIT_ORT_DIR:-$HOME/spacemit-ort.riscv64.2.0.4_yyx}"
 ep_threads_arg="${EP_THREADS:-8}"
 ep_affinity_arg="${EP_AFFINITY:-8;9;10;11;12;13;14;15}"
 denoise_steps_arg="${DENOISE_STEPS:-10}"
@@ -191,7 +191,7 @@ BIN="$SCRIPT_DIR/build_smolvla_robot/smolvla_robot_pipeline"
 
 if [[ ! -x "$BIN" ]]; then
   echo "binary not found: $BIN" >&2
-  echo "run: cpp/build_smolvla_robot_cpp.sh EP203" >&2
+  echo "run: cpp/build_smolvla_robot_cpp.sh EP204" >&2
   exit 1
 fi
 

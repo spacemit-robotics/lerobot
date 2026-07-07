@@ -25,7 +25,7 @@ onnx_inference/
 
 ## 复现资源
 
-- 补丁版 spacemit ort sdk：[spacemit-ort.riscv64.2.0.3_yyx.tar.gz](https://archive.spacemit.com/spacemit-ai/model_zoo/vla/smolvla/spacemit-ort-sdk/spacemit-ort.riscv64.2.0.3_yyx.tar.gz)
+- 补丁版 spacemit ort sdk：[spacemit-ort.riscv64.2.0.4_yyx.tar.gz](https://archive.spacemit.com/spacemit-ai/model_zoo/vla/smolvla/spacemit-ort-sdk/spacemit-ort.riscv64.2.0.4_yyx.tar.gz)
 - ACT / SmolVLA pytorch 和 onnx 模型：[tools/README.md](tools/README.md)。
 
 ## 部署步骤
@@ -66,11 +66,11 @@ k3 性能测试数据参考。
 
 ### c++ benchmark
 
-| 模型         | 配置      | 平均延迟  |
-| ------------ | --------- | --------- |
-| act-fp32     | ep 8 线程 | 1288.3 ms |
-| act-int8     | ep 8 线程 | 195.1 ms  |
-| smolvla-fp32 | ep 8 线程 | 9023.9 ms |
-| smolvla-fp16 | ep 8 线程 | 1980.6 ms |
+| 模型         | 配置         | 平均延迟  |
+| ------------ | ------------ | --------- |
+| act-fp32     | ep 8 线程    | 1288.3 ms |
+| act-int8     | ep 8 线程    | 195.1 ms  |
+| smolvla-fp32 | ep 8 线程    | 9023.9 ms |
+| smolvla-fp16 | ep204 8 线程 | 1127.5 ms |
 
-SmolVLA 数据在 spacemit k3 上测试，使用 2 路相机模型、`--denoise-steps 10`，统计推理平均耗时，不包含模型加载。
+SmolVLA 数据在 spacemit k3 上测试，使用 2 路相机模型、`--denoise-steps 10`，统计完整推理平均耗时，不包含模型加载。

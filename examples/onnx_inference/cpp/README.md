@@ -132,12 +132,12 @@ sudo apt-get install -y spacemit-onnxruntime python3-spacemit-ort
 
 ```bash
 cd cpp
-SPACEMIT_ORT_DIR=~/spacemit-ort.riscv64.2.0.3_yyx ./build_smolvla_robot_cpp.sh EP203
+./build_smolvla_robot_cpp.sh EP204
 ```
 
 可选 ep：
 
-- `EP203`：使用 `SPACEMIT_ORT_DIR` 或 `~/spacemit-ort.riscv64.2.0.3_yyx`
+- `EP204`：使用 `SPACEMIT_ORT_DIR` 或 `~/spacemit-ort.riscv64.2.0.4_yyx`
 - `SYSTEM`：使用系统 onnx runtime / spacemit ep
 
 ### benchmark
@@ -158,7 +158,7 @@ cd cpp
 - `--runtime`：运行时 metadata，默认 `models/onnx/smolvla_runtime.txt`。
 - `--port`：机械臂串口，默认 `/dev/ttyACM0`。
 - `--camera`：相机名和设备编号。
-- `--spacemit-ort-dir`：spacemit ort sdk 目录，默认 `~/spacemit-ort.riscv64.2.0.3_yyx`。
+- `--spacemit-ort-dir`：spacemit ort sdk 目录，默认 `~/spacemit-ort.riscv64.2.0.4_yyx`。
 - `--use-spacemit-ep`：脚本默认开启；如需 cpu 推理，传 `--cpu`。
 - `--n-action-steps`：每次推理后放入 action queue 的动作步数，默认读取 `smolvla_runtime.txt`。
 - `--denoise-steps`：去噪循环次数，默认 `10`；更大更慢但更接近参考采样。

@@ -218,11 +218,11 @@ ln -sfn ../../../so101_smolvla_pick_green_cube_2cam/checkpoints/100000/pretraine
 mkdir -p /tmp/smolvla_models
 
 curl -L \
-  https://archive.spacemit.com/spacemit-ai/model_zoo/vla/smolvla/spacemit-ort-sdk/spacemit-ort.riscv64.2.0.3_yyx.tar.gz \
-  -o /tmp/smolvla_models/spacemit-ort.riscv64.2.0.3_yyx.tar.gz
+  https://archive.spacemit.com/spacemit-ai/model_zoo/vla/smolvla/spacemit-ort-sdk/spacemit-ort.riscv64.2.0.4_yyx.tar.gz \
+  -o /tmp/smolvla_models/spacemit-ort.riscv64.2.0.4_yyx.tar.gz
 
-tar -xzf /tmp/smolvla_models/spacemit-ort.riscv64.2.0.3_yyx.tar.gz -C ~
-export SPACEMIT_ORT_DIR=~/spacemit-ort.riscv64.2.0.3_yyx
+tar -xzf /tmp/smolvla_models/spacemit-ort.riscv64.2.0.4_yyx.tar.gz -C ~
+export SPACEMIT_ORT_DIR=~/spacemit-ort.riscv64.2.0.4_yyx
 ```
 
 <a id="smolvla-export-fp32"></a>
@@ -285,10 +285,10 @@ python tools/surgery_smolvla_fp16.py \
   --output-dir models/onnx/smolvla-fp16-surgeried
 ```
 
-手术内容：
+手术会对三个子图做如下处理：
 
-- `prefill_lm` / `denoise_step` 的 rmsnorm 子图 fp32 化
-- `prefill_lm` / `denoise_step` 的 scatternd 降解
+- `vision_encoder`：将 self-attention 核心融合为 `VisionSelfAttnNHWC`，并将 MLP 中的 GELU 近似子图替换为 ONNX `Gelu(approximate="tanh")`。
+- `prefill_lm` / `denoise_step`：将 RMSNorm 子图中的关键计算提升为 fp32，并把 scatter 写入算子降解为等价子图。
 
 <a id="smolvla-compare"></a>
 
@@ -312,7 +312,7 @@ python tools/compare_smolvla_onnx.py \
   --fp32-dir models/onnx/smolvla-fp32 \
   --fp16-dir models/onnx/smolvla-fp16-surgeried \
   --use-spacemit-ep \
-  --spacemit-ort-dir ~/spacemit-ort.riscv64.2.0.3_yyx \
+  --spacemit-ort-dir ~/spacemit-ort.riscv64.2.0.4_yyx \
   --ep-threads 8 --ep-affinity "8;9;10;11;12;13;14;15" \
   --num-cameras 2 \
   --denoise-steps 10
