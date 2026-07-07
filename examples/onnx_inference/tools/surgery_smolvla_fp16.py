@@ -36,11 +36,15 @@ def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    for name in ["vision_encoder.onnx", "connector.onnx"]:
-        src = args.input_dir / name
-        if not src.exists():
-            raise FileNotFoundError(src)
-        shutil.copy2(src, args.output_dir / name)
+    vision = args.input_dir / "vision_encoder.onnx"
+    if not vision.exists():
+        raise FileNotFoundError(vision)
+    _run("surgery_vision_self_attn_nhwc.py", vision, args.output_dir / "vision_encoder.onnx", args.no_smoke)
+
+    connector = args.input_dir / "connector.onnx"
+    if not connector.exists():
+        raise FileNotFoundError(connector)
+    shutil.copy2(connector, args.output_dir / "connector.onnx")
 
     prefill_tmp = args.output_dir / "prefill_lm.rms_fp32.onnx"
     _run("surgery_rms_fp32.py", args.input_dir / "prefill_lm.onnx", prefill_tmp, args.no_smoke)
