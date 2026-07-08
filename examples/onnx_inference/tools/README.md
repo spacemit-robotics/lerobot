@@ -273,9 +273,9 @@ python tools/convert_smolvla_fp32_to_fp16.py \
 
 <a id="smolvla-surgery-fp16"></a>
 
-### fp16 算子手术
+### FP16 模型图修复
 
-为避免 fp16 模型在 spacemit ep 上推理出现漂移或者数值溢出，需要对 fp16 模型进行手术。
+为避免 FP16 模型在 SpaceMIT EP 上推理出现漂移或数值溢出，需要对 FP16 模型图进行修复。
 
 推荐在 pc 执行：
 
@@ -285,7 +285,7 @@ python tools/surgery_smolvla_fp16.py \
   --output-dir models/onnx/smolvla-fp16-surgeried
 ```
 
-手术会对三个子图做如下处理：
+图修复会对三个子图做如下处理：
 
 - `vision_encoder`：将 self-attention 核心融合为 `VisionSelfAttnNHWC`，并将 MLP 中的 GELU 近似子图替换为 ONNX `Gelu(approximate="tanh")`。
 - `prefill_lm` / `denoise_step`：将 RMSNorm 子图中的关键计算提升为 fp32，并把 scatter 写入算子降解为等价子图。
@@ -294,7 +294,7 @@ python tools/surgery_smolvla_fp16.py \
 
 ### 数值对比
 
-pc cpu 对比 fp32 与 fp16 手术版：
+PC CPU 对比 FP32 与 FP16 图修复版：
 
 ```bash
 python tools/compare_smolvla_onnx.py \
@@ -305,7 +305,7 @@ python tools/compare_smolvla_onnx.py \
   --denoise-steps 10
 ```
 
-k3 上验证 fp16 手术版 spacemit ep 数值：
+K3 上验证 FP16 图修复版 SpaceMIT EP 数值：
 
 ```bash
 python tools/compare_smolvla_onnx.py \

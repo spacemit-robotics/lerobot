@@ -100,7 +100,7 @@ ls -l models/pytorch/smolvla/checkpoints/100000/pretrained_model
 
 ### 使用建议
 
-python 运行 SmolVLA 时推荐使用 fp32 模型，并通过系统 `spacemit_ort` 包注册 spacemit ep。fp16 手术版依赖补丁版 spacemit ort sdk 才能保证数值正确；python 进程中延迟加载补丁版 `libspacemit_ep.so` 可能触发 static TLS 或 onnxruntime wheel 兼容问题，因此 fp16 部署建议使用 [c++ pipeline](../cpp/README.md#smolvla-pipeline)。
+python 运行 SmolVLA 时推荐使用 fp32 模型，并通过系统 `spacemit_ort` 包注册 spacemit ep。FP16 图修复版依赖补丁版 spacemit ort sdk 才能保证数值正确；python 进程中延迟加载补丁版 `libspacemit_ep.so` 可能触发 static TLS 或 onnxruntime wheel 兼容问题，因此 fp16 部署建议使用 [c++ pipeline](../cpp/README.md#smolvla-pipeline)。
 
 ### benchmark
 

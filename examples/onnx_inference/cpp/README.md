@@ -111,7 +111,7 @@ ls -l models/onnx/smolvla-fp16-surgeried/denoise_step.onnx
 ls -l models/onnx/smolvla_runtime.txt
 ```
 
-模型下载、导出、量化、手术和 `smolvla_runtime.txt` 生成见 [tools/README.md](../tools/README.md#smolvla-pipeline)。
+模型下载、导出、量化、图修复和 `smolvla_runtime.txt` 生成见 [tools/README.md](../tools/README.md#smolvla-pipeline)。
 
 ### 安装依赖
 
