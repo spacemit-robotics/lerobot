@@ -1,0 +1,76 @@
+## Copyright (C) 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+## SPDX-License-Identifier: Apache-2.0
+
+module: components/thirdparty/lerobot/examples/onnx_inference
+
+tests:
+  - name: onnx-inference-static-functional
+    description: >-
+      Checks ACT and SmolVLA ONNX inference deployment entrypoints, shell
+      syntax, Python syntax, and final EP204 documentation references without
+      downloading models.
+    category: functional
+    scopes: [pr]
+    timeout_s: 300
+    workdir: sdk
+    requires:
+      commands: [bash, python3]
+    artifacts:
+      - output/test/pr/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/onnx_inference_static_functional.log
+    command: |
+      bash components/thirdparty/lerobot/examples/onnx_inference/test/test_static_functional.sh
+
+  - name: smolvla-k3-performance
+    description: >-
+      Downloads or reuses the released SmolVLA 2-camera models and EP204 SDK,
+      builds the C++ pipeline, runs a synthetic-input K3 full-inference
+      benchmark, and fails if the average inference latency exceeds
+      SMOLVLA_PERF_MAX_AVG_MS.
+    category: performance
+    scopes: [scheduled, release]
+    timeout_s: 7200
+    workdir: sdk
+    requires:
+      commands: [bash, curl, cmake, make, python3, tar]
+      hardware:
+        - SpacemiT K3 board with SpaceMIT EP runtime support
+    python_env:
+      python: python3
+      install:
+        - >-
+          --index-url https://mirrors.aliyun.com/pypi/simple
+          numpy>=2.0.0,<2.3.0 safetensors>=0.4.3,<1.0.0 transformers
+    artifacts:
+      - output/test/scheduled/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/smolvla_k3_performance.log
+      - output/test/scheduled/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/smolvla_k3_performance_summary.txt
+      - output/test/release/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/smolvla_k3_performance.log
+      - output/test/release/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/smolvla_k3_performance_summary.txt
+    command: |
+      bash components/thirdparty/lerobot/examples/onnx_inference/test/test_smolvla_k3_performance.sh
+
+  - name: act-k3-performance
+    description: >-
+      Downloads or reuses the released ACT models, prepares C++ benchmark
+      inputs, builds act_benchmark, runs the ACT INT8 SpaceMIT EP benchmark,
+      and fails if the average latency exceeds ACT_PERF_MAX_AVG_MS.
+    category: performance
+    scopes: [scheduled, release]
+    timeout_s: 3600
+    workdir: sdk
+    requires:
+      commands: [bash, curl, cmake, make, python3, tar]
+      hardware:
+        - SpacemiT K3 board with SpaceMIT EP runtime support
+    python_env:
+      python: python3
+      install:
+        - >-
+          --index-url https://mirrors.aliyun.com/pypi/simple
+          numpy>=2.0.0,<2.3.0 safetensors>=0.4.3,<1.0.0
+    artifacts:
+      - output/test/scheduled/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/act_k3_performance.log
+      - output/test/scheduled/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/act_k3_performance_summary.txt
+      - output/test/release/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/act_k3_performance.log
+      - output/test/release/components__thirdparty__lerobot__examples__onnx_inference/modules/components__thirdparty__lerobot__examples__onnx_inference/logs/act_k3_performance_summary.txt
+    command: |
+      bash components/thirdparty/lerobot/examples/onnx_inference/test/test_act_k3_performance.sh

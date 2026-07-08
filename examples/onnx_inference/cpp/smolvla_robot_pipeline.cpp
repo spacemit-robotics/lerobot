@@ -1178,6 +1178,18 @@ int main(int argc, char* argv[]) {
             vector<float> images(static_cast<size_t>(pipe.camera_count()) * 3 * meta.resize_h * meta.resize_w, -1.0f);
             vector<float> state(meta.max_state_dim, 0.0f);
             auto warmup_result = pipe.run(images, state);
+            const double infer_ms = warmup_result.vision_ms
+                + warmup_result.connector_ms
+                + warmup_result.prefill_ms
+                + warmup_result.denoise_ms;
+            cout << "[warmup " << setw(3) << i << "] infer="
+                << fixed << setprecision(1)
+                << infer_ms
+                << " ms  v=" << warmup_result.vision_ms
+                << " c=" << warmup_result.connector_ms
+                << " pf=" << warmup_result.prefill_ms
+                << " dn=" << warmup_result.denoise_ms
+                << "\n";
             if (args.print_actions) {
                 cout << "[warmup " << i << "] action=[";
                 for (int j = 0; j < meta.action_dim; ++j) {
