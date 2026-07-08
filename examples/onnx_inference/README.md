@@ -19,7 +19,7 @@ onnx_inference/
 
 ## 使用入口
 
-- 模型导出、量化、算子手术、数值对比：[tools/README.md](tools/README.md)。
+- 模型导出、量化、模型图修复、数值对比：[tools/README.md](tools/README.md)。
 - python benchmark、离线测试、真机运行：[python/README.md](python/README.md)。
 - c++ benchmark、离线测试、真机运行：[cpp/README.md](cpp/README.md)。
 
@@ -46,7 +46,7 @@ onnx_inference/
 2. [下载已测试模型用于复现 benchmark](tools/README.md#smolvla-models)，可跳过。
 3. [从 safetensors checkpoint 导出 onnx fp32 模型](tools/README.md#smolvla-export-fp32)。
 4. [下载补丁版 spacemit ort sdk](tools/README.md#smolvla-ort-sdk)。
-5. [将 fp32 模型量化为 fp16](tools/README.md#smolvla-convert-fp16)，[并执行 fp16 算子手术](tools/README.md#smolvla-surgery-fp16)。
+5. [将 fp32 模型量化为 fp16](tools/README.md#smolvla-convert-fp16)，[并执行 FP16 模型图修复](tools/README.md#smolvla-surgery-fp16)。
 6. [对比 fp32 / fp16 输出](tools/README.md#smolvla-compare)。
 7. [导出 smolvla_runtime.txt](tools/README.md#smolvla-runtime-metadata)。
 8. [python 推理](python/README.md#smolvla-pipeline)。
