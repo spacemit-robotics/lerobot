@@ -73,4 +73,4 @@ k3 性能测试数据参考。
 | smolvla-fp32 | ep 8 线程    | 9023.9 ms |
 | smolvla-fp16 | ep204 8 线程 | 1127.5 ms |
 
-SmolVLA 数据在 spacemit k3 上测试，使用 2 路相机模型、`--denoise-steps 10`，统计完整推理平均耗时，不包含模型加载。
+SmolVLA 数据为 2 路相机模型测试结果，`--denoise-steps 10`，统计完整推理平均耗时，不包含模型加载。
