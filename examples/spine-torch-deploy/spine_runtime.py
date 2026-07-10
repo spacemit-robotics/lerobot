@@ -683,6 +683,50 @@ def _enable_spinednn_plugin() -> None:
     logging.info("Enabled SpineDNN torch plugin for ACT FP16 inference.")
 
 
+def _assert_record_runtime_bindings(record_module: Any, expected: dict[str, Any], phase: str) -> None:
+    mismatched = [
+        name for name, target in expected.items() if getattr(record_module, name, None) is not target
+    ]
+    if mismatched:
+        names = ", ".join(sorted(mismatched))
+        raise RuntimeError(
+            f"Unsupported lerobot-record runtime bindings during {phase}: {names}. "
+            "The upstream lerobot-record call path changed; update the SpineTorch adapter before running."
+        )
+
+
+def _install_record_runtime_bindings() -> None:
+    global _ORIGINAL_MAKE_POLICY, _ORIGINAL_MAKE_PRE_POST_PROCESSORS, _ORIGINAL_PREDICT_ACTION
+
+    from lerobot.policies import factory
+    from lerobot.scripts import lerobot_record
+    from lerobot.utils import control_utils
+
+    original_bindings = {
+        "make_policy": factory.make_policy,
+        "make_pre_post_processors": factory.make_pre_post_processors,
+        "predict_action": control_utils.predict_action,
+    }
+    _assert_record_runtime_bindings(lerobot_record, original_bindings, "pre-install validation")
+
+    _ORIGINAL_MAKE_POLICY = factory.make_policy
+    _ORIGINAL_MAKE_PRE_POST_PROCESSORS = factory.make_pre_post_processors
+    _ORIGINAL_PREDICT_ACTION = control_utils.predict_action
+
+    replacement_bindings = {
+        "make_policy": _make_fp16_policy,
+        "make_pre_post_processors": _make_fp16_pre_post_processors,
+        "predict_action": _predict_action_fp16,
+    }
+    factory.make_policy = _make_fp16_policy
+    factory.make_pre_post_processors = _make_fp16_pre_post_processors
+    control_utils.predict_action = _predict_action_fp16
+    for name, replacement in replacement_bindings.items():
+        setattr(lerobot_record, name, replacement)
+
+    _assert_record_runtime_bindings(lerobot_record, replacement_bindings, "post-install validation")
+
+
 def install_record_runtime() -> None:
     """Install FP16 overrides used by the custom lerobot-record entry point."""
     global _RECORD_RUNTIME_INSTALLED
@@ -692,22 +736,6 @@ def install_record_runtime() -> None:
 
     install_model_runtime()
     PreTrainedConfig.from_pretrained = classmethod(_fp16_config_from_pretrained)
-
-    from lerobot.policies import factory
-    from lerobot.utils import control_utils
-
-    _ORIGINAL_MAKE_POLICY = factory.make_policy
-    _ORIGINAL_MAKE_PRE_POST_PROCESSORS = factory.make_pre_post_processors
-    _ORIGINAL_PREDICT_ACTION = control_utils.predict_action
-    factory.make_policy = _make_fp16_policy
-    factory.make_pre_post_processors = _make_fp16_pre_post_processors
-    control_utils.predict_action = _predict_action_fp16
-
+    _install_record_runtime_bindings()
     _enable_spinednn_plugin()
-
-    from lerobot.scripts import lerobot_record
-
-    lerobot_record.make_policy = _make_fp16_policy
-    lerobot_record.make_pre_post_processors = _make_fp16_pre_post_processors
-    lerobot_record.predict_action = _predict_action_fp16
     _RECORD_RUNTIME_INSTALLED = True

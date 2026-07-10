@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import shutil
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import torch
 from spine_runtime import load_policy_for_fp16_conversion
@@ -41,12 +42,17 @@ def convert_act_model_to_fp16(input_path: Path, output_path: Path) -> None:
         raise FileNotFoundError(f"ACT pretrained directory does not exist: {input_path}")
     if output_path.exists():
         raise FileExistsError(f"Output path already exists: {output_path}")
+    if not output_path.parent.is_dir():
+        raise FileNotFoundError(f"Output parent directory does not exist: {output_path.parent}")
 
     policy = load_policy_for_fp16_conversion(input_path)
     policy.to(dtype=torch.float16)
 
-    shutil.copytree(input_path, output_path)
-    policy.save_pretrained(output_path)
+    with TemporaryDirectory(prefix=f".{output_path.name}.tmp-", dir=output_path.parent) as tmp_dir:
+        staged_output = Path(tmp_dir) / output_path.name
+        shutil.copytree(input_path, staged_output)
+        policy.save_pretrained(staged_output)
+        staged_output.replace(output_path)
 
     first_parameter = next(policy.parameters())
     print(f"Saved FP16 ACT model to {output_path}")

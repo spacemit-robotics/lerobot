@@ -6,10 +6,12 @@ from dataclasses import fields
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import convert_act_model_to_fp16 as converter
 import lerobot_record_fp16
 import spine_runtime
 from benchmark_act_dummy_inference import benchmark_select_action
@@ -128,6 +130,93 @@ def test_benchmark_resets_policy_for_every_warmup_and_timed_iteration():
     assert len(latencies) == 2
     assert policy.reset_count == 5
     assert policy.select_count == 5
+
+
+def test_record_runtime_binding_guard_rejects_upstream_drift():
+    expected = {"make_policy": object()}
+    record_module = SimpleNamespace(make_policy=object())
+
+    with pytest.raises(RuntimeError, match="upstream lerobot-record call path changed"):
+        spine_runtime._assert_record_runtime_bindings(record_module, expected, "test")
+
+
+def test_record_runtime_patches_actual_module_bindings():
+    from lerobot.policies import factory
+    from lerobot.scripts import lerobot_record
+    from lerobot.utils import control_utils
+
+    original_bindings = {
+        "make_policy": factory.make_policy,
+        "make_pre_post_processors": factory.make_pre_post_processors,
+        "predict_action": control_utils.predict_action,
+    }
+    try:
+        spine_runtime._install_record_runtime_bindings()
+
+        assert factory.make_policy is spine_runtime._make_fp16_policy
+        assert factory.make_pre_post_processors is spine_runtime._make_fp16_pre_post_processors
+        assert control_utils.predict_action is spine_runtime._predict_action_fp16
+        assert lerobot_record.make_policy is spine_runtime._make_fp16_policy
+        assert lerobot_record.make_pre_post_processors is spine_runtime._make_fp16_pre_post_processors
+        assert lerobot_record.predict_action is spine_runtime._predict_action_fp16
+    finally:
+        factory.make_policy = original_bindings["make_policy"]
+        factory.make_pre_post_processors = original_bindings["make_pre_post_processors"]
+        control_utils.predict_action = original_bindings["predict_action"]
+        for name, original in original_bindings.items():
+            setattr(lerobot_record, name, original)
+
+
+def test_fp16_conversion_cleans_staging_directory_on_failure(tmp_path, monkeypatch):
+    input_path = tmp_path / "pretrained_model"
+    output_path = tmp_path / "pretrained_model_fp16"
+    input_path.mkdir()
+    (input_path / "model.safetensors").write_text("fp32")
+
+    class FailingPolicy:
+        def to(self, **kwargs):
+            return self
+
+        def save_pretrained(self, path):
+            raise RuntimeError("save failed")
+
+    monkeypatch.setattr(converter, "load_policy_for_fp16_conversion", lambda path: FailingPolicy())
+
+    with pytest.raises(RuntimeError, match="save failed"):
+        converter.convert_act_model_to_fp16(input_path, output_path)
+
+    assert not output_path.exists()
+    assert not list(tmp_path.glob(f".{output_path.name}.tmp-*"))
+
+
+def test_fp16_conversion_publishes_completed_directory(tmp_path, monkeypatch):
+    input_path = tmp_path / "pretrained_model"
+    output_path = tmp_path / "pretrained_model_fp16"
+    input_path.mkdir()
+    (input_path / "model.safetensors").write_text("fp32")
+    (input_path / "config.json").write_text("{}")
+
+    class SuccessfulPolicy:
+        def __init__(self):
+            self.parameter = torch.nn.Parameter(torch.zeros(1, dtype=torch.float16))
+
+        def to(self, **kwargs):
+            return self
+
+        def save_pretrained(self, path):
+            Path(path, "model.safetensors").write_text("fp16")
+
+        def parameters(self):
+            yield self.parameter
+
+    monkeypatch.setattr(converter, "load_policy_for_fp16_conversion", lambda path: SuccessfulPolicy())
+
+    converter.convert_act_model_to_fp16(input_path, output_path)
+
+    assert (input_path / "model.safetensors").read_text() == "fp32"
+    assert (output_path / "model.safetensors").read_text() == "fp16"
+    assert (output_path / "config.json").read_text() == "{}"
+    assert not list(tmp_path.glob(f".{output_path.name}.tmp-*"))
 
 
 def test_legacy_policy_dtype_argument_is_removed():

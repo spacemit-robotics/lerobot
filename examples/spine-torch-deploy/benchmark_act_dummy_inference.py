@@ -162,9 +162,11 @@ def make_display_batch(policy: ACTPolicy, batch: dict[str, Any]) -> dict[str, An
 def describe_value(name: str, value: Any, indent: int = 0) -> None:
     prefix = " " * indent
     if isinstance(value, torch.Tensor):
-        print(
-            f"{prefix}{name}: Tensor(shape={tuple(value.shape)}, dtype={value.dtype}, device={value.device}, layout={tensor_layout_str(value)}, type={type(value).__name__})"
+        tensor_description = (
+            f"Tensor(shape={tuple(value.shape)}, dtype={value.dtype}, device={value.device}, "
+            f"layout={tensor_layout_str(value)}, type={type(value).__name__})"
         )
+        print(f"{prefix}{name}: {tensor_description}")
     elif isinstance(value, list):
         print(f"{prefix}{name}: list(len={len(value)}, type={type(value).__name__})")
         for i, item in enumerate(value):

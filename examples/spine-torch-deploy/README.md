@@ -27,6 +27,7 @@ sudo apt install -y libopenblas0-pthread libomp5
 Use a dedicated Python 3.12 environment for the latest SpineTorch packages. The validated environment
 path is `~/.lerobot-venv-torh2.8`, with Torch 2.8.0, torchvision 0.23.0, and
 `spine-torch-extension 2.8.0+spacemit.0`.
+The historical `torh2.8` spelling is kept for compatibility with the validated K3 deployment environment.
 
 Install the validated K3 wheels directly from SpaceMIT PyPI. The direct references pin the correct
 Python 3.12 RISC-V wheels and verify their SHA256 hashes:
@@ -43,6 +44,8 @@ The Torch wheel filename contains `2.8.0+spacemit.2`, while its package metadata
 Using the exact PyPI file reference also avoids selecting another Torch 2.8 build from the same index.
 
 No patch application or source-tree modification is required.
+At startup, the dedicated entry point verifies the upstream `lerobot-record` module bindings before
+installing its process-local overrides. It exits with an explicit compatibility error if that call path changes.
 
 ## Convert the model
 
