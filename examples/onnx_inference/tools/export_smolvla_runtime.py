@@ -54,19 +54,56 @@ def _image_keys(config: dict) -> list[str]:
     return [key for key in config["input_features"] if key.startswith("observation.images.")]
 
 
+def _tokenizer_files(tokenizer_name: str) -> tuple[Path, Path]:
+    local_path = Path(tokenizer_name).expanduser()
+    if local_path.exists():
+        tokenizer_json = local_path / "tokenizer.json" if local_path.is_dir() else local_path
+        tokenizer_config = tokenizer_json.parent / "tokenizer_config.json"
+    else:
+        from huggingface_hub import hf_hub_download
+
+        tokenizer_json = Path(hf_hub_download(tokenizer_name, "tokenizer.json"))
+        tokenizer_config = Path(hf_hub_download(tokenizer_name, "tokenizer_config.json"))
+
+    if not tokenizer_json.is_file():
+        raise FileNotFoundError(tokenizer_json)
+    if not tokenizer_config.is_file():
+        raise FileNotFoundError(tokenizer_config)
+    return tokenizer_json, tokenizer_config
+
+
+def _special_token_text(value: str | dict, name: str) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict) and isinstance(value.get("content"), str):
+        return value["content"]
+    raise ValueError(f"tokenizer config has no usable {name}")
+
+
 def _tokenize(task: str, tokenizer_name: str, max_length: int) -> tuple[np.ndarray, np.ndarray]:
-    from transformers import AutoTokenizer
+    from tokenizers import Tokenizer
 
     prompt = task if task.endswith("\n") else f"{task}\n"
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
-    tokenized = tokenizer(
-        [prompt],
-        padding="max_length",
+    tokenizer_json, tokenizer_config_path = _tokenizer_files(tokenizer_name)
+    tokenizer_config = json.loads(tokenizer_config_path.read_text(encoding="utf-8"))
+    pad_token = _special_token_text(tokenizer_config.get("pad_token"), "pad_token")
+
+    tokenizer = Tokenizer.from_file(str(tokenizer_json))
+    pad_token_id = tokenizer.token_to_id(pad_token)
+    if pad_token_id is None:
+        raise ValueError(f"pad token {pad_token!r} is missing from {tokenizer_json}")
+    tokenizer.enable_truncation(
         max_length=max_length,
-        truncation=True,
-        return_tensors="np",
+        direction=tokenizer_config.get("truncation_side", "right"),
     )
-    return tokenized["input_ids"][0].astype(np.int64), tokenized["attention_mask"][0].astype(np.int64)
+    tokenizer.enable_padding(
+        length=max_length,
+        direction=tokenizer_config.get("padding_side", "right"),
+        pad_id=pad_token_id,
+        pad_token=pad_token,
+    )
+    encoded = tokenizer.encode(prompt, add_special_tokens=True)
+    return np.asarray(encoded.ids, dtype=np.int64), np.asarray(encoded.attention_mask, dtype=np.int64)
 
 
 def _calibration_lines(calibration: Path | None) -> list[str]:

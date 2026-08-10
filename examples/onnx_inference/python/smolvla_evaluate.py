@@ -26,12 +26,7 @@ import onnxruntime as ort
 import torch
 import torch.nn.functional as functional
 from safetensors.torch import load_file
-
-# The online ONNX runner only needs transformers for tokenization. Some K3
-# torch wheels are built without distributed C++ ops, and transformers can touch
-# generation/torch integration during lazy imports unless this is disabled.
-os.environ["USE_TORCH"] = "0"
-
+from tokenizers import Tokenizer
 
 SPACEMIT_EP_ENV_DEFAULTS = {
     "SPACEMIT_EP_PWCONV_INT8_USE": "1",
@@ -67,8 +62,6 @@ SPACEMIT_EP_ENV_DEFAULTS = {
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "src"))
 
-from transformers import AutoTokenizer  # noqa: E402
-
 from lerobot.utils.constants import OBS_STATE  # noqa: E402
 
 EXAMPLE_DIR = Path(__file__).resolve().parents[1]
@@ -94,6 +87,58 @@ SO101_MOTORS = (
 )
 SO101_STATE_KEYS = tuple(f"{motor}.pos" for motor in SO101_MOTORS)
 SO101_ACTION_KEYS = SO101_STATE_KEYS
+
+
+def _tokenizer_files(tokenizer_name: str) -> tuple[Path, Path]:
+    local_path = Path(tokenizer_name).expanduser()
+    if local_path.exists():
+        tokenizer_json = local_path / "tokenizer.json" if local_path.is_dir() else local_path
+        tokenizer_config = tokenizer_json.parent / "tokenizer_config.json"
+    else:
+        from huggingface_hub import hf_hub_download
+
+        tokenizer_json = Path(hf_hub_download(tokenizer_name, "tokenizer.json"))
+        tokenizer_config = Path(hf_hub_download(tokenizer_name, "tokenizer_config.json"))
+
+    if not tokenizer_json.is_file():
+        raise FileNotFoundError(tokenizer_json)
+    if not tokenizer_config.is_file():
+        raise FileNotFoundError(tokenizer_config)
+    return tokenizer_json, tokenizer_config
+
+
+def _special_token_text(value: str | dict, name: str) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict) and isinstance(value.get("content"), str):
+        return value["content"]
+    raise ValueError(f"tokenizer config has no usable {name}")
+
+
+def _tokenize(task: str, tokenizer_name: str, max_length: int) -> tuple[torch.Tensor, torch.Tensor]:
+    tokenizer_json, tokenizer_config_path = _tokenizer_files(tokenizer_name)
+    tokenizer_config = json.loads(tokenizer_config_path.read_text(encoding="utf-8"))
+    pad_token = _special_token_text(tokenizer_config.get("pad_token"), "pad_token")
+
+    tokenizer = Tokenizer.from_file(str(tokenizer_json))
+    pad_token_id = tokenizer.token_to_id(pad_token)
+    if pad_token_id is None:
+        raise ValueError(f"pad token {pad_token!r} is missing from {tokenizer_json}")
+    tokenizer.enable_truncation(
+        max_length=max_length,
+        direction=tokenizer_config.get("truncation_side", "right"),
+    )
+    tokenizer.enable_padding(
+        length=max_length,
+        direction=tokenizer_config.get("padding_side", "right"),
+        pad_id=pad_token_id,
+        pad_token=pad_token,
+    )
+    prompt = task if task.endswith("\n") else f"{task}\n"
+    encoded = tokenizer.encode(prompt, add_special_tokens=True)
+    input_ids = torch.tensor(encoded.ids, dtype=torch.int64).unsqueeze(0)
+    attention_mask = torch.tensor(encoded.attention_mask, dtype=torch.bool).unsqueeze(0)
+    return input_ids, attention_mask
 
 
 class PortableNormalRng:
@@ -157,8 +202,8 @@ class LightweightSmolVLARuntime:
         self.action_mean = stats["action.mean"].float()
         self.action_std = stats["action.std"].float()
 
-        self.tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_NAME)
         self.task = task if task.endswith("\n") else f"{task}\n"
+        self.lang_tokens, self.lang_masks = _tokenize(self.task, TOKENIZER_NAME, self.tokenizer_max_length)
 
 
 def _resize_with_pad(img: torch.Tensor, width: int, height: int, pad_value: float = 0.0) -> torch.Tensor:
@@ -757,15 +802,8 @@ def main() -> int:  # noqa: C901
             state_norm = (state_raw - runtime.state_mean) / (runtime.state_std + 1e-8)
             state = _pad_vector(state_norm, runtime.max_state_dim)
 
-            tokenized = runtime.tokenizer(
-                [runtime.task],
-                max_length=runtime.tokenizer_max_length,
-                padding="max_length",
-                truncation=True,
-                return_tensors="pt",
-            )
-            lang_tokens = tokenized["input_ids"].to(dtype=torch.int64)
-            lang_masks = tokenized["attention_mask"].to(dtype=torch.bool)
+            lang_tokens = runtime.lang_tokens
+            lang_masks = runtime.lang_masks
         return images, lang_tokens, lang_masks, state
 
     empty_image_embs: dict[int, np.ndarray] = {}
