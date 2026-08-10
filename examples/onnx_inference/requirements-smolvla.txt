@@ -1,7 +1,7 @@
 # SmolVLA onnx k3 python runtime and comparison dependencies.
 #
 # install from examples/onnx_inference on k3:
-#   pip install -r requirements-smolvla.txt
+#   python -m pip install -r requirements-smolvla.txt
 
 --index-url https://mirrors.aliyun.com/pypi/simple
 --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
@@ -18,4 +18,3 @@ onnxruntime>=1.16.0,<2.0.0
 safetensors>=0.4.3,<1.0.0
 spacemit_ort
 transformers
-xslim

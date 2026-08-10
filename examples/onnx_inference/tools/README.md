@@ -4,18 +4,25 @@
 
 ## 通用环境
 
-pc 环境：
+PC 环境：
 
-```
+```bash
 conda create -n lerobot-venv python=3.11 -y
 conda activate lerobot-venv
 ```
 
-k3 环境：
+K3 环境：
 
 ```bash
-python -m venv ~/.lerobot-venv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"
+
+uv venv ~/.lerobot-venv --python 3.12 --seed
 source ~/.lerobot-venv/bin/activate
+python -m pip --version
+
+python -m pip config --site set global.index-url https://mirrors.aliyun.com/pypi/simple
+python -m pip config --site set global.extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
 ## ACT pipeline
@@ -24,17 +31,22 @@ source ~/.lerobot-venv/bin/activate
 
 ### 安装 python 依赖
 
-pc 导出、量化和数值对比：
+PC 导出、量化和数值对比：
 
 ```bash
 pip install -r requirements-act-pc.txt
 ```
 
-k3 推理和数值对比：
+K3 推理和数值对比：
 
 ```bash
-pip install -r requirements-act.txt
+python -m pip install -r requirements-act.txt
+
+python -m pip list | grep '^opencv'
+python -m pip check
 ```
+
+K3 输出中只应包含 `opencv-python-headless`。不要在 K3 推理环境安装 `xslim`；`xslim` 依赖 `opencv-python`，与 LeRobot 使用的 `opencv-python-headless` 共享 `cv2` 目录并产生文件冲突。模型量化在 PC 环境执行。
 
 <a id="act-models"></a>
 
@@ -80,15 +92,15 @@ python tools/act_pytorch_to_onnx.py \
 ```bash
 python -m xslim \
   -i models/onnx/act-fp32/act.onnx \
-  -o models/onnx/act-int8/act.q.onnx \
-  --dynq
+  -o models/onnx/act-int8/act.q.onnx
 ```
 
 参数说明：
 
 - `-i`：输入 fp32 onnx 文件。
 - `-o`：输出 int8 onnx 文件。
-- `--dynq`：启用 int8 动态量化。
+
+`xslim 2.x` 未指定配置文件且不传 `--fp16` 时，默认执行 INT8 动态量化。
 
 <a id="act-compare"></a>
 
@@ -168,16 +180,19 @@ python tools/make_act_test_inputs.py \
 
 ### 安装 python 依赖
 
-pc 导出、量化和数值对比：
+PC 导出、量化和数值对比：
 
 ```bash
 pip install -r requirements-smolvla-pc.txt
 ```
 
-k3 推理和数值对比：
+K3 推理和数值对比：
 
 ```bash
-pip install -r requirements-smolvla.txt
+python -m pip install -r requirements-smolvla.txt
+
+python -m pip list | grep '^opencv'
+python -m pip check
 ```
 
 <a id="smolvla-models"></a>
